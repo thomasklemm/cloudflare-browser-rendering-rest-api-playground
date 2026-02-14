@@ -4,43 +4,10 @@ import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, C
 import type { EndpointConfig, FieldConfig, InputMode } from '../types/api'
 import { JsonSchemaBuilder } from './JsonSchemaBuilder'
 
-// Quick-start examples for the /json endpoint (from Cloudflare's docs)
+// Quick-start examples for the /json endpoint.
+// Ordered: broad/any-page → landing pages → content verticals → technical.
 const JSON_EXAMPLES = [
-  {
-    label: 'Product info',
-    prompt: 'Extract product information from this page',
-    schema: JSON.stringify({
-      type: 'json_schema',
-      schema: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          price: { type: 'number' },
-          currency: { type: 'string' },
-          description: { type: 'string' },
-          availability: { type: 'string' },
-        },
-        required: ['name', 'price'],
-      },
-    }),
-  },
-  {
-    label: 'Article',
-    prompt: 'Extract the article title, author, publication date, and a brief summary',
-    schema: JSON.stringify({
-      type: 'json_schema',
-      schema: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          author: { type: 'string' },
-          date: { type: 'string' },
-          summary: { type: 'string' },
-        },
-        required: ['title'],
-      },
-    }),
-  },
+  // --- Works on any page ---
   {
     label: 'Page links',
     prompt: 'Extract all links from this page with their text and URLs',
@@ -82,30 +49,126 @@ const JSON_EXAMPLES = [
     }),
   },
   {
-    label: 'Contact info',
-    prompt: 'Extract business contact information from this page',
+    label: 'SEO meta',
+    prompt: 'Extract SEO metadata including title, description, Open Graph tags, and canonical URL',
     schema: JSON.stringify({
       type: 'json_schema',
       schema: {
         type: 'object',
         properties: {
-          company_name: { type: 'string' },
-          email: { type: 'string' },
-          phone: { type: 'string' },
-          address: { type: 'string' },
-          social_links: {
+          title: { type: 'string' },
+          description: { type: 'string' },
+          canonical_url: { type: 'string' },
+          og_title: { type: 'string' },
+          og_description: { type: 'string' },
+          og_image: { type: 'string' },
+        },
+        required: ['title'],
+      },
+    }),
+  },
+  // --- Homepages & landing pages ---
+  {
+    label: 'Company overview',
+    prompt: 'Extract the company or product name, tagline, and a brief description of what they do',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          tagline: { type: 'string' },
+          description: { type: 'string' },
+          industry: { type: 'string' },
+          founded: { type: 'string' },
+        },
+        required: ['name'],
+      },
+    }),
+  },
+  {
+    label: 'Features',
+    prompt: 'Extract all product features or benefits listed on this page',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          features: {
             type: 'array',
             items: {
               type: 'object',
               properties: {
-                platform: { type: 'string' },
-                url: { type: 'string' },
+                name: { type: 'string' },
+                description: { type: 'string' },
               },
-              required: ['platform', 'url'],
+              required: ['name'],
             },
           },
         },
-        required: ['company_name'],
+        required: ['features'],
+      },
+    }),
+  },
+  {
+    label: 'Testimonials',
+    prompt: 'Extract all customer testimonials or reviews from this page',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          testimonials: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                quote: { type: 'string' },
+                author: { type: 'string' },
+                role: { type: 'string' },
+                company: { type: 'string' },
+              },
+              required: ['quote'],
+            },
+          },
+        },
+        required: ['testimonials'],
+      },
+    }),
+  },
+  // --- Content verticals ---
+  {
+    label: 'Article',
+    prompt: 'Extract the article title, author, publication date, and a brief summary',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          author: { type: 'string' },
+          date: { type: 'string' },
+          summary: { type: 'string' },
+        },
+        required: ['title'],
+      },
+    }),
+  },
+  {
+    label: 'Product info',
+    prompt: 'Extract product information from this page',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          price: { type: 'number' },
+          currency: { type: 'string' },
+          description: { type: 'string' },
+          availability: { type: 'string' },
+        },
+        required: ['name', 'price'],
       },
     }),
   },
@@ -136,46 +199,30 @@ const JSON_EXAMPLES = [
     }),
   },
   {
-    label: 'SEO meta',
-    prompt: 'Extract SEO metadata including title, description, Open Graph tags, and canonical URL',
+    label: 'Contact info',
+    prompt: 'Extract business contact information from this page',
     schema: JSON.stringify({
       type: 'json_schema',
       schema: {
         type: 'object',
         properties: {
-          title: { type: 'string' },
-          description: { type: 'string' },
-          canonical_url: { type: 'string' },
-          og_title: { type: 'string' },
-          og_description: { type: 'string' },
-          og_image: { type: 'string' },
-        },
-        required: ['title'],
-      },
-    }),
-  },
-  {
-    label: 'Table data',
-    prompt: 'Extract all tabular data from this page as structured rows',
-    schema: JSON.stringify({
-      type: 'json_schema',
-      schema: {
-        type: 'object',
-        properties: {
-          tables: {
+          company_name: { type: 'string' },
+          email: { type: 'string' },
+          phone: { type: 'string' },
+          address: { type: 'string' },
+          social_links: {
             type: 'array',
             items: {
               type: 'object',
               properties: {
-                caption: { type: 'string' },
-                headers: { type: 'array', items: { type: 'string' } },
-                rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
+                platform: { type: 'string' },
+                url: { type: 'string' },
               },
-              required: ['headers', 'rows'],
+              required: ['platform', 'url'],
             },
           },
         },
-        required: ['tables'],
+        required: ['company_name'],
       },
     }),
   },
@@ -203,6 +250,32 @@ const JSON_EXAMPLES = [
           },
         },
         required: ['events'],
+      },
+    }),
+  },
+  // --- Technical / structural ---
+  {
+    label: 'Table data',
+    prompt: 'Extract all tabular data from this page as structured rows',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          tables: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                caption: { type: 'string' },
+                headers: { type: 'array', items: { type: 'string' } },
+                rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
+              },
+              required: ['headers', 'rows'],
+            },
+          },
+        },
+        required: ['tables'],
       },
     }),
   },
