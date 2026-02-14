@@ -391,6 +391,18 @@ export function EndpointForm({
                 {ex.label}
               </button>
             ))}
+            {(values.prompt || values.response_format) && (
+              <button
+                type="button"
+                onClick={() => {
+                  onChange('prompt', '')
+                  onChange('response_format', '')
+                }}
+                className="px-2.5 py-1 text-xs text-surface-500 hover:text-surface-700 transition-colors"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
       )}
