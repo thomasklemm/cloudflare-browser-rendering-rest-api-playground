@@ -113,23 +113,28 @@ function StatusDot({ entry }: { entry: BatchResponseEntry }) {
   return <span className="w-2 h-2 rounded-full bg-green-400" />
 }
 
+function timestamp(): string {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
+}
+
 function buildDownloadName(url: string, responseType: ResponseType): string {
   const ext = responseType === 'image' ? 'png' : 'pdf'
   const label = responseType === 'image' ? 'screenshot' : 'document'
-  if (!url || url === '__html__') return `${label}.${ext}`
+  const ts = timestamp()
+  if (!url || url === '__html__') return `${label}-${ts}.${ext}`
   try {
     const u = new URL(url)
-    // hostname → slug: "www.example.com" → "example-com"
     const host = u.hostname.replace(/^www\./, '').replace(/\./g, '-')
-    // pathname → slug: "/about/team" → "about-team", "/" → ""
     const path = u.pathname
       .replace(/^\/|\/$/g, '')
       .replace(/[/\s]+/g, '-')
       .replace(/[^a-zA-Z0-9-]/g, '')
     const slug = path ? `${host}-${path}` : host
-    return `${slug}-${label}.${ext}`
+    return `${slug}-${label}-${ts}.${ext}`
   } catch {
-    return `${label}.${ext}`
+    return `${label}-${ts}.${ext}`
   }
 }
 
