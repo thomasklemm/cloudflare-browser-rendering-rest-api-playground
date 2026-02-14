@@ -1,73 +1,52 @@
-# React + TypeScript + Vite
+# Cloudflare Browser Rendering REST API Playground
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interactive web playground for exploring all 8 [Cloudflare Browser Rendering REST API](https://developers.cloudflare.com/browser-rendering/rest-api/) endpoints.
 
-Currently, two official plugins are available:
+Configure your credentials, fill in endpoint-specific parameters, see the generated curl command, and view responses (HTML, images, PDFs, JSON, markdown) inline.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Endpoints
 
-## React Compiler
+| Endpoint | Response | Viewer |
+|----------|----------|--------|
+| `/content` | HTML | Sandboxed iframe + source view |
+| `/screenshot` | Image (png/jpeg/webp) | Inline image + download |
+| `/pdf` | PDF | Inline PDF viewer + download |
+| `/json` | JSON | Collapsible JSON tree |
+| `/markdown` | Text | Rendered markdown + raw view |
+| `/snapshot` | JSON (HTML + base64 screenshot) | Combined HTML + image viewer |
+| `/scrape` | JSON | JSON tree |
+| `/links` | JSON | JSON tree |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features
 
-## Expanding the ESLint configuration
+- **Data-driven forms** — endpoint configs drive dynamic form rendering
+- **URL/HTML toggle** — provide a URL or paste raw HTML
+- **Live curl preview** — see the exact curl command with copy-to-clipboard
+- **Binary response handling** — images and PDFs render inline via blob URLs
+- **Cmd+Enter** to send requests
+- **Persistent settings** — credentials and form values stored in localStorage
+- **Cookie banner dismissal** — two-layer approach: blocks CMP script URLs via `rejectRequestPattern` + injects a cleanup script via `addScriptTag` covering 18+ CMP providers (OneTrust, Cookiebot, Usercentrics, consentmanager.net, and more)
+- **Load all images** — scrolls the page to trigger lazy-loaded images (IntersectionObserver, `data-src` patterns), then waits for completion via a sentinel element
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Setup
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```sh
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open http://localhost:5173 and configure your Cloudflare Account ID and API Token in the settings panel.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### API Token
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Create an API token at https://dash.cloudflare.com/profile/api-tokens with the permission **Account > Browser Rendering > Edit**.
+
+### CORS
+
+The Vite dev server proxies requests through `/api/cf` to `https://api.cloudflare.com` to avoid CORS issues. The curl preview shows the real Cloudflare URL.
+
+## Tech Stack
+
+- Vite + React + TypeScript
+- Tailwind CSS v4
+- lucide-react, react-markdown, react-json-view-lite
