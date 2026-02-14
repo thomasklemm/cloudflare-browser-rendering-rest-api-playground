@@ -309,41 +309,63 @@ const DISMISS_COOKIES_SCRIPT = `
 })();
 `.trim()
 
-// Script that scrolls the page to trigger lazy-loaded images (IntersectionObserver),
-// then removes loading="lazy" attributes and scrolls back to top.
+// Script that scrolls the page to trigger lazy-loaded images, waits for them,
+// then creates a sentinel element so the API knows when to proceed.
+// Sentinel: #__images_ready (used with waitForSelector)
 const LOAD_ALL_IMAGES_SCRIPT = `
 (async function() {
-  // Remove loading="lazy" so images start fetching immediately once in view
+  function wait(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+  // Step 1: Remove loading="lazy" so images load eagerly once in viewport
   document.querySelectorAll('img[loading="lazy"]').forEach(function(img) {
     img.removeAttribute('loading');
   });
 
-  // Scroll down the page one viewport at a time to trigger IntersectionObservers
+  // Step 2: Activate data-src / data-lazy-src patterns (lazysizes, etc.)
+  document.querySelectorAll('img[data-src]:not([src]), img[data-src][src=""]').forEach(function(img) {
+    img.src = img.getAttribute('data-src');
+  });
+  document.querySelectorAll('img[data-lazy-src]:not([src]), img[data-lazy-src][src=""]').forEach(function(img) {
+    img.src = img.getAttribute('data-lazy-src');
+  });
+  document.querySelectorAll('source[data-srcset]').forEach(function(source) {
+    source.srcset = source.getAttribute('data-srcset');
+  });
+
+  // Step 3: Scroll down the page slowly to trigger IntersectionObservers
   var totalHeight = document.body.scrollHeight;
   var viewportHeight = window.innerHeight;
   var scrollPos = 0;
+  var maxScrolls = 100; // safety limit
 
-  while (scrollPos < totalHeight) {
-    scrollPos += viewportHeight;
+  while (scrollPos < totalHeight && maxScrolls-- > 0) {
+    scrollPos += Math.floor(viewportHeight * 0.8);
     window.scrollTo(0, scrollPos);
-    await new Promise(function(r) { setTimeout(r, 100); });
-    // Page height may grow (infinite scroll, dynamic content)
+    await wait(300);
+    // Page height may grow (dynamic content)
     totalHeight = document.body.scrollHeight;
   }
 
-  // Scroll back to top
+  // Step 4: Scroll back to top
   window.scrollTo(0, 0);
+  await wait(200);
 
-  // Wait for images to finish loading
+  // Step 5: Wait for all images to finish loading
   var images = Array.from(document.querySelectorAll('img[src]'));
   await Promise.all(images.map(function(img) {
     if (img.complete) return Promise.resolve();
     return new Promise(function(r) {
       img.addEventListener('load', r, { once: true });
       img.addEventListener('error', r, { once: true });
-      setTimeout(r, 3000);
+      setTimeout(r, 5000);
     });
   }));
+
+  // Step 6: Signal completion via sentinel element
+  var sentinel = document.createElement('div');
+  sentinel.id = '__images_ready';
+  sentinel.style.display = 'none';
+  document.body.appendChild(sentinel);
 })();
 `.trim()
 
@@ -384,6 +406,10 @@ export function buildBody(
 
   if (formValues._loadAllImages === 'true') {
     scripts.push({ content: LOAD_ALL_IMAGES_SCRIPT })
+    // Wait for the sentinel element the script creates when all images are loaded
+    if (!formValues.waitForSelector?.trim()) {
+      body.waitForSelector = '#__images_ready'
+    }
   }
 
   if (scripts.length > 0) {
