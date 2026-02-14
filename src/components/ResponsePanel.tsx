@@ -332,7 +332,7 @@ export function ResponsePanel({
             {response.duration}ms
           </span>
           <span className="text-xs text-surface-500">{response.contentType}</span>
-          {response.status < 400 && (responseType === 'image' || responseType === 'pdf') && (
+          {response.status < 400 && response.data && isBinaryResponse(responseType) && (
             <a
               href={response.data as string}
               download={buildDownloadName(entries[activeIndex]?.url || '', responseType)}
@@ -341,6 +341,23 @@ export function ResponsePanel({
               <Download className="w-3.5 h-3.5" />
               Download
             </a>
+          )}
+          {response.status < 400 && response.data && !isBinaryResponse(responseType) && (
+            <button
+              onClick={() => {
+                const blob = new Blob([response.data as string], { type: 'text/plain;charset=utf-8' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = buildDownloadName(entries[activeIndex]?.url || '', responseType)
+                a.click()
+                URL.revokeObjectURL(url)
+              }}
+              className="ml-auto flex items-center gap-1.5 px-2.5 py-1 text-xs text-surface-600 hover:text-surface-800 border border-surface-300 rounded-lg hover:bg-surface-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download
+            </button>
           )}
         </div>
       )}
