@@ -397,23 +397,20 @@ export function buildBody(
   }
 
   // Injected scripts (cookie dismissal, lazy-load images)
-  const scripts: { content: string }[] = []
+  const injectedScripts: { content: string }[] = []
+  let injectedRejectPatterns: string[] = []
 
   if (formValues._dismissCookies === 'true') {
-    body.rejectRequestPattern = CMP_BLOCK_PATTERNS
-    scripts.push({ content: DISMISS_COOKIES_SCRIPT })
+    injectedRejectPatterns = CMP_BLOCK_PATTERNS
+    injectedScripts.push({ content: DISMISS_COOKIES_SCRIPT })
   }
 
   if (formValues._loadAllImages === 'true') {
-    scripts.push({ content: LOAD_ALL_IMAGES_SCRIPT })
+    injectedScripts.push({ content: LOAD_ALL_IMAGES_SCRIPT })
     // Wait for the sentinel element the script creates when all images are loaded
     if (!formValues.waitForSelector?.trim()) {
       body.waitForSelector = { selector: '#__images_ready', timeout: 30000 }
     }
-  }
-
-  if (scripts.length > 0) {
-    body.addScriptTag = scripts
   }
 
   for (const field of endpoint.fields) {
@@ -444,6 +441,17 @@ export function buildBody(
     } else {
       body[field.name] = value
     }
+  }
+
+  // Merge injected scripts/patterns with user-provided ones
+  if (injectedScripts.length > 0) {
+    const userScripts = Array.isArray(body.addScriptTag) ? body.addScriptTag as unknown[] : []
+    body.addScriptTag = [...injectedScripts, ...userScripts]
+  }
+
+  if (injectedRejectPatterns.length > 0) {
+    const userPatterns = Array.isArray(body.rejectRequestPattern) ? body.rejectRequestPattern as string[] : []
+    body.rejectRequestPattern = [...injectedRejectPatterns, ...userPatterns]
   }
 
   return body
