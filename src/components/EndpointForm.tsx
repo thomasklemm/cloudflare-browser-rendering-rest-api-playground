@@ -81,6 +81,131 @@ const JSON_EXAMPLES = [
       },
     }),
   },
+  {
+    label: 'Contact info',
+    prompt: 'Extract business contact information from this page',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          company_name: { type: 'string' },
+          email: { type: 'string' },
+          phone: { type: 'string' },
+          address: { type: 'string' },
+          social_links: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                platform: { type: 'string' },
+                url: { type: 'string' },
+              },
+              required: ['platform', 'url'],
+            },
+          },
+        },
+        required: ['company_name'],
+      },
+    }),
+  },
+  {
+    label: 'Pricing',
+    prompt: 'Extract all pricing plans and their features from this page',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          plans: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                price: { type: 'string' },
+                billing_period: { type: 'string' },
+                features: { type: 'array', items: { type: 'string' } },
+              },
+              required: ['name', 'price'],
+            },
+          },
+        },
+        required: ['plans'],
+      },
+    }),
+  },
+  {
+    label: 'SEO meta',
+    prompt: 'Extract SEO metadata including title, description, Open Graph tags, and canonical URL',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          description: { type: 'string' },
+          canonical_url: { type: 'string' },
+          og_title: { type: 'string' },
+          og_description: { type: 'string' },
+          og_image: { type: 'string' },
+        },
+        required: ['title'],
+      },
+    }),
+  },
+  {
+    label: 'Table data',
+    prompt: 'Extract all tabular data from this page as structured rows',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          tables: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                caption: { type: 'string' },
+                headers: { type: 'array', items: { type: 'string' } },
+                rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
+              },
+              required: ['headers', 'rows'],
+            },
+          },
+        },
+        required: ['tables'],
+      },
+    }),
+  },
+  {
+    label: 'Events',
+    prompt: 'Extract all events or scheduled items from this page',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          events: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                date: { type: 'string' },
+                time: { type: 'string' },
+                location: { type: 'string' },
+                description: { type: 'string' },
+              },
+              required: ['name'],
+            },
+          },
+        },
+        required: ['events'],
+      },
+    }),
+  },
 ]
 
 interface EndpointFormProps {
