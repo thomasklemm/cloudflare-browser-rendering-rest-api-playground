@@ -51,3 +51,14 @@ export interface Settings {
   accountId: string
   apiToken: string
 }
+
+export interface BatchResponseEntry {
+  url: string
+  loading: boolean
+  response: ApiResponse | null
+}
+
+export interface BatchResult {
+  entries: BatchResponseEntry[]
+  activeIndex: number
+}
