@@ -49,6 +49,35 @@ function SnapshotViewer({ data }: { data: string }) {
   )
 }
 
+/**
+ * Try to unwrap a CF API JSON envelope like {"success":true,"result":"..."}.
+ * Returns the extracted result string and remaining metadata, or null if not applicable.
+ */
+function unwrapCfEnvelope(data: string): { result: string; meta: Record<string, unknown> } | null {
+  try {
+    const parsed = JSON.parse(data) as Record<string, unknown>
+    if (typeof parsed.result === 'string' && parsed.result) {
+      const { result, ...meta } = parsed
+      return { result: result as string, meta }
+    }
+  } catch { /* not JSON */ }
+  return null
+}
+
+function MetaBadges({ meta }: { meta: Record<string, unknown> }) {
+  const entries = Object.entries(meta).filter(([, v]) => v !== undefined)
+  if (entries.length === 0) return null
+  return (
+    <div className="flex items-center gap-2 px-4 py-1.5 border-b border-surface-300 bg-surface-100">
+      {entries.map(([key, val]) => (
+        <span key={key} className="text-xs text-surface-500">
+          {key}: <span className="text-surface-700">{String(val)}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function ResponseViewer({ response, responseType }: { response: ApiResponse; responseType: ResponseType }) {
   if (response.error || !response.data) {
     return (
@@ -95,6 +124,26 @@ function ResponseViewer({ response, responseType }: { response: ApiResponse; res
   }
 
   const data = response.data as string
+
+  // For html/markdown, the CF API wraps the result in a JSON envelope
+  // like {"success":true,"result":"<actual content>"}. Unwrap it.
+  if (responseType === 'html' || responseType === 'markdown') {
+    const unwrapped = unwrapCfEnvelope(data)
+    if (unwrapped) {
+      return (
+        <div className="flex flex-col h-full">
+          <MetaBadges meta={unwrapped.meta} />
+          <div className="flex-1 min-h-0">
+            {responseType === 'html' ? (
+              <HtmlViewer data={unwrapped.result} />
+            ) : (
+              <MarkdownViewer data={unwrapped.result} />
+            )}
+          </div>
+        </div>
+      )
+    }
+  }
 
   switch (responseType) {
     case 'html':
