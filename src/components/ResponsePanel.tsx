@@ -246,12 +246,23 @@ function extractContent(data: string, responseType: ResponseType): string {
   return data
 }
 
+/** Check whether any completed entries have a CF JSON envelope. */
+function hasEnvelopeResponses(entries: BatchResponseEntry[], responseType: ResponseType): boolean {
+  if (responseType !== 'html' && responseType !== 'markdown') return false
+  return entries.some((e) => {
+    if (!e.response || e.response.status >= 400 || !e.response.data) return false
+    return unwrapCfEnvelope(e.response.data as string) !== null
+  })
+}
+
 async function downloadAllAsZip(
   entries: BatchResponseEntry[],
   responseType: ResponseType,
+  raw = false,
 ): Promise<void> {
   const zip = new JSZip()
-  const ext = RESPONSE_TYPE_EXT[responseType] || 'bin'
+  const useRaw = raw || isBinaryResponse(responseType)
+  const ext = useRaw ? 'json' : (RESPONSE_TYPE_EXT[responseType] || 'bin')
   const label = RESPONSE_TYPE_LABEL[responseType] || 'response'
   const binary = isBinaryResponse(responseType)
 
@@ -275,7 +286,8 @@ async function downloadAllAsZip(
       const blob = await res.blob()
       zip.file(name, blob)
     } else {
-      zip.file(name, extractContent(entry.response.data as string, responseType))
+      const content = raw ? (entry.response.data as string) : extractContent(entry.response.data as string, responseType)
+      zip.file(name, content)
     }
   }
 
@@ -366,26 +378,59 @@ export function ResponsePanel({
               </button>
             ))}
           </div>
-          {canDownloadAll && (
-            <button
-              onClick={async () => {
-                setZipping(true)
-                try {
-                  await downloadAllAsZip(entries, responseType)
-                } finally {
-                  setZipping(false)
-                }
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-surface-500 hover:text-surface-800 whitespace-nowrap shrink-0 transition-colors"
-            >
-              {zipping ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
+          {canDownloadAll && (() => {
+            const hasEnvelope = hasEnvelopeResponses(entries, responseType)
+            const ext = RESPONSE_TYPE_EXT[responseType] || 'bin'
+            const zipBtn = 'flex items-center gap-1.5 px-3 py-1.5 text-xs text-surface-500 hover:text-surface-800 whitespace-nowrap shrink-0 transition-colors'
+
+            if (zipping) {
+              return (
+                <span className={zipBtn}>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Zipping...
+                </span>
+              )
+            }
+
+            if (hasEnvelope) {
+              return (
+                <div className="flex items-center shrink-0">
+                  <button
+                    onClick={async () => {
+                      setZipping(true)
+                      try { await downloadAllAsZip(entries, responseType) } finally { setZipping(false) }
+                    }}
+                    className={`${zipBtn} border-r border-surface-300`}
+                  >
+                    <FolderDown className="w-3.5 h-3.5" />
+                    All .{ext} ({completedCount})
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setZipping(true)
+                      try { await downloadAllAsZip(entries, responseType, true) } finally { setZipping(false) }
+                    }}
+                    className={zipBtn}
+                  >
+                    All .json
+                  </button>
+                </div>
+              )
+            }
+
+            return (
+              <button
+                onClick={async () => {
+                  setZipping(true)
+                  try { await downloadAllAsZip(entries, responseType) } finally { setZipping(false) }
+                }}
+                className={zipBtn}
+              >
                 <FolderDown className="w-3.5 h-3.5" />
-              )}
-              {zipping ? 'Zipping...' : `Download All (${completedCount})`}
-            </button>
-          )}
+                Download All ({completedCount})
+              </button>
+            )
+          })()}
         </div>
       )}
 
