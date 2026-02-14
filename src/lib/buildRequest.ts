@@ -27,9 +27,8 @@ const CMP_BLOCK_PATTERNS: string[] = [
   // TrustArc
   'consent\\.trustarc\\.com',
   'consent-pref\\.trustarc\\.com',
-  // Usercentrics
-  'app\\.usercentrics\\.eu',
-  'sdk\\.usercentrics\\.eu',
+  // Usercentrics (V2: app/sdk, V3: web.cmp/privacy-proxy)
+  '\\.usercentrics\\.eu',
   // Klaro
   'cdn\\.kiprotect\\.com/klaro',
   // Osano
@@ -280,7 +279,7 @@ const DISMISS_COOKIES_SCRIPT = `
     '.cookiefirst-root',
     '.termly-styles',
     '.osano-cm-window', '.osano-cm-dialog',
-    '.uc-banner-wrap', '#usercentrics-root',
+    '.uc-banner-wrap', '#usercentrics-root', '#usercentrics-cmp',
     '.klaro',
     '#cmpbox', '#cmpbox2',
     '[id*="cookie-banner" i]', '[id*="cookiebanner" i]', '[id*="cookie-consent" i]',
