@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-import type { EndpointId, Settings } from './types/api'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import type { EndpointId, InputMode, Settings } from './types/api'
 import { endpoints } from './config/endpoints'
 import { useLocalStorage } from './hooks/useLocalStorage'
-import { useApiRequest } from './hooks/useApiRequest'
+import { useBatchApiRequest } from './hooks/useBatchApiRequest'
 import { buildCurlCommand } from './lib/buildRequest'
 import { Header } from './components/Header'
 import { SettingsPanel } from './components/SettingsPanel'
@@ -22,11 +22,17 @@ export default function App() {
     'cf-br-form-values',
     {},
   )
+  // Shared URL input — persists across endpoint tabs
+  const [urlInput, setUrlInput] = useLocalStorage<string>('cf-br-urls', '')
+  const [inputMode, setInputMode] = useLocalStorage<InputMode>('cf-br-input-mode', 'url')
 
-  const { loading, response, execute, reset } = useApiRequest()
+  const { entries, activeIndex, setActiveIndex, loading, execute, reset } = useBatchApiRequest()
 
   const endpoint = endpoints.find((e) => e.id === activeEndpoint)!
-  const currentValues = formValues[activeEndpoint] || {}
+  const currentValues = useMemo(
+    () => formValues[activeEndpoint] || {},
+    [formValues, activeEndpoint],
+  )
 
   const handleFieldChange = useCallback(
     (name: string, value: string) => {
@@ -41,37 +47,39 @@ export default function App() {
     [activeEndpoint, setFormValues],
   )
 
-  // Sync URL across tabs: when switching endpoints, copy url from previous
   const handleEndpointChange = useCallback(
     (id: EndpointId) => {
-      const currentUrl = formValues[activeEndpoint]?.url
-      if (currentUrl && !formValues[id]?.url) {
-        setFormValues((prev) => ({
-          ...prev,
-          [id]: {
-            ...prev[id],
-            url: currentUrl,
-          },
-        }))
-      }
       setActiveEndpoint(id)
       reset()
     },
-    [activeEndpoint, formValues, setFormValues, reset],
+    [reset],
   )
 
   const settingsReady = Boolean(settings.accountId && settings.apiToken)
   const formSubmitRef = useRef<HTMLButtonElement>(null)
+
+  // Parse URLs from the textarea (one per line)
+  const urls = urlInput
+    .split('\n')
+    .map((u) => u.trim())
+    .filter(Boolean)
 
   const handleSubmit = useCallback(() => {
     if (!settingsReady) {
       setShowSettings(true)
       return
     }
-    execute(endpoint, settings, currentValues)
-  }, [settingsReady, endpoint, settings, currentValues, execute])
 
-  // Cmd+Enter shortcut -- click the form's submit button so validation runs
+    if (inputMode === 'html') {
+      // HTML mode: single request
+      execute(endpoint, settings, { ...currentValues, html: currentValues.html || '' }, ['__html__'])
+    } else {
+      // URL mode: batch requests
+      execute(endpoint, settings, currentValues, urls)
+    }
+  }, [settingsReady, endpoint, settings, currentValues, urls, inputMode, execute])
+
+  // Cmd+Enter shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -83,7 +91,15 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  const curl = buildCurlCommand(endpoint, settings, currentValues)
+  // Build curl for the currently selected response tab's URL
+  const activeUrl = entries[activeIndex]?.url || urls[0] || ''
+  const curlValues = inputMode === 'html'
+    ? { ...currentValues, html: currentValues.html || '' }
+    : { ...currentValues, url: activeUrl }
+  const curl = buildCurlCommand(endpoint, settings, curlValues)
+
+  // Active response for the selected tab
+  const activeEntry = entries[activeIndex] || null
 
   return (
     <div className="h-screen flex flex-col bg-surface-50">
@@ -113,6 +129,11 @@ export default function App() {
             loading={loading}
             settingsReady={settingsReady}
             submitRef={formSubmitRef}
+            urlInput={urlInput}
+            onUrlInputChange={setUrlInput}
+            inputMode={inputMode}
+            onInputModeChange={setInputMode}
+            urlCount={urls.length}
           />
           <CurlPreview curl={curl} />
         </div>
@@ -120,9 +141,13 @@ export default function App() {
         {/* Right: Response */}
         <div className="flex-1 flex flex-col min-h-0">
           <ResponsePanel
-            response={response}
+            entries={entries}
+            activeIndex={activeIndex}
+            onSelectIndex={setActiveIndex}
             responseType={endpoint.responseType}
             loading={loading}
+            response={activeEntry?.response || null}
+            entryLoading={activeEntry?.loading || false}
           />
         </div>
       </div>

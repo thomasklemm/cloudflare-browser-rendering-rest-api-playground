@@ -50,7 +50,8 @@ export function useBatchApiRequest() {
 
       // Fire all requests in parallel
       const promises = urls.map(async (url, index) => {
-        const values = { ...formValues, url }
+        // For HTML mode (url === '__html__'), don't inject url into values
+        const values = url === '__html__' ? formValues : { ...formValues, url }
         const { url: fetchUrl, options } = buildFetchOptions(endpoint, settings, values)
         const start = performance.now()
 

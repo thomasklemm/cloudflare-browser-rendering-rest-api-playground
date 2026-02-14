@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown } from 'lucide-react'
 import type { EndpointConfig, FieldConfig, InputMode } from '../types/api'
 
@@ -11,6 +11,11 @@ interface EndpointFormProps {
   loading: boolean
   settingsReady: boolean
   submitRef?: RefObject<HTMLButtonElement | null>
+  urlInput: string
+  onUrlInputChange: (value: string) => void
+  inputMode: InputMode
+  onInputModeChange: (mode: InputMode) => void
+  urlCount: number
 }
 
 function FieldInput({
@@ -84,14 +89,16 @@ function getMissingRequired(
   endpoint: EndpointConfig,
   values: Record<string, string>,
   inputMode: InputMode,
+  urlCount: number,
 ): Set<string> {
   const missing = new Set<string>()
 
   // Validate URL/HTML input
   if (endpoint.hasUrlHtmlInput) {
-    const activeField = inputMode === 'url' ? 'url' : 'html'
-    if (!values[activeField]?.trim()) {
-      missing.add(activeField)
+    if (inputMode === 'url') {
+      if (urlCount === 0) missing.add('url')
+    } else {
+      if (!values.html?.trim()) missing.add('html')
     }
   }
 
@@ -103,33 +110,30 @@ function getMissingRequired(
   return missing
 }
 
-export function EndpointForm({ endpoint, values, onChange, onSubmit, loading, settingsReady, submitRef }: EndpointFormProps) {
+export function EndpointForm({
+  endpoint,
+  values,
+  onChange,
+  onSubmit,
+  loading,
+  settingsReady,
+  submitRef,
+  urlInput,
+  onUrlInputChange,
+  inputMode,
+  onInputModeChange,
+  urlCount,
+}: EndpointFormProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
-  const [submitted, setSubmitted] = useState(false)
-  const [inputMode, setInputModeState] = useState<InputMode>(
-    (values.html?.trim() && !values.url?.trim()) ? 'html' : 'url',
-  )
+  // Track which endpoint was submitted to auto-reset when switching
+  const [submittedEndpoint, setSubmittedEndpoint] = useState<string | null>(null)
+  const submitted = submittedEndpoint === endpoint.id
 
-  const setInputMode = (mode: InputMode) => {
-    setInputModeState(mode)
-    // Clear the other field when switching modes
-    if (mode === 'url') {
-      onChange('html', '')
-    } else {
-      onChange('url', '')
-    }
-  }
-
-  // Reset submitted state when switching endpoints
-  useEffect(() => {
-    setSubmitted(false)
-  }, [endpoint.id])
-
-  const missingRequired = getMissingRequired(endpoint, values, inputMode)
+  const missingRequired = getMissingRequired(endpoint, values, inputMode, urlCount)
   const formReady = missingRequired.size === 0
 
   const handleSubmit = () => {
-    setSubmitted(true)
+    setSubmittedEndpoint(endpoint.id)
     if (!formReady) return
     onSubmit()
   }
@@ -158,6 +162,15 @@ export function EndpointForm({ endpoint, values, onChange, onSubmit, loading, se
   const urlHtmlError = (name: string) =>
     submitted && missingRequired.has(name)
 
+  // Dynamic submit button label
+  const submitLabel = loading
+    ? 'Sending...'
+    : inputMode === 'html'
+      ? 'Send Request'
+      : urlCount <= 1
+        ? 'Send Request'
+        : `Send ${urlCount} Requests`
+
   return (
     <div className="space-y-4">
       <p className="text-xs text-surface-500">{endpoint.description}</p>
@@ -168,7 +181,7 @@ export function EndpointForm({ endpoint, values, onChange, onSubmit, loading, se
           <div className="flex items-center gap-1 mb-2">
             <button
               type="button"
-              onClick={() => setInputMode('url')}
+              onClick={() => onInputModeChange('url')}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${
                 inputMode === 'url'
                   ? 'bg-surface-300 text-surface-900'
@@ -180,7 +193,7 @@ export function EndpointForm({ endpoint, values, onChange, onSubmit, loading, se
             </button>
             <button
               type="button"
-              onClick={() => setInputMode('html')}
+              onClick={() => onInputModeChange('html')}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${
                 inputMode === 'html'
                   ? 'bg-surface-300 text-surface-900'
@@ -194,19 +207,22 @@ export function EndpointForm({ endpoint, values, onChange, onSubmit, loading, se
 
           {inputMode === 'url' ? (
             <div>
-              <input
-                type="text"
-                value={values.url || ''}
-                onChange={(e) => onChange('url', e.target.value)}
-                placeholder="https://example.com"
+              <textarea
+                value={urlInput}
+                onChange={(e) => onUrlInputChange(e.target.value)}
+                placeholder={"https://example.com\nhttps://another.com"}
+                rows={Math.max(2, Math.min(6, urlInput.split('\n').length + 1))}
                 className={`w-full px-3 py-2 bg-surface-200 border ${
                   urlHtmlError('url')
                     ? 'border-red-500/60 focus:border-red-400'
                     : 'border-surface-300 focus:border-accent-500'
-                } rounded-lg text-sm text-surface-900 placeholder:text-surface-500 focus:outline-none`}
+                } rounded-lg text-sm text-surface-900 placeholder:text-surface-500 focus:outline-none resize-y font-mono`}
               />
+              {urlCount > 1 && (
+                <p className="text-xs text-surface-500 mt-1">{urlCount} URLs (one per line)</p>
+              )}
               {urlHtmlError('url') && (
-                <p className="text-xs text-red-400 mt-1">URL is required</p>
+                <p className="text-xs text-red-400 mt-1">At least one URL is required</p>
               )}
             </div>
           ) : (
@@ -343,7 +359,7 @@ export function EndpointForm({ endpoint, values, onChange, onSubmit, loading, se
         ) : (
           <Play className="w-4 h-4" />
         )}
-        {loading ? 'Sending...' : 'Send Request'}
+        {submitLabel}
         {!loading && (
           <kbd className="ml-2 text-xs opacity-60 hidden sm:inline">Cmd+Enter</kbd>
         )}
