@@ -1,14 +1,70 @@
 import type { EndpointConfig, Settings } from '../types/api'
 
-// Self-contained cookie banner dismissal script.
-// Approach based on reject_all_cookies, DuckDuckGo autoconsent, and screenshotone.com.
+// --- Cookie banner dismissal: two-layer approach ---
 //
-// Strategy (in order):
-//  1. Try clicking CMP-specific "reject/decline" buttons by exact selector
-//  2. Try clicking generic reject buttons by selector patterns (class, id, aria, data attrs)
-//  3. Text-based scan: find any clickable element whose text matches reject keywords
-//  4. Fallback: try accept/close buttons (clearing the banner is better than leaving it)
-//  5. Last resort: hide banner elements via DOM removal + CSS override
+// Layer 1: Block CMP script URLs via rejectRequestPattern (prevents banner from loading)
+// Layer 2: Fallback cleanup script via addScriptTag (catches inline/custom banners)
+//
+// rejectRequestPattern regexes block the JS that renders cookie consent banners.
+// Covers: OneTrust, Cookiebot, Quantcast, Didomi, TrustArc, Usercentrics, Klaro,
+// Osano, Termly, CookieYes, Complianz, Iubenda, Axeptio, Sourcepoint, CookieFirst,
+// Borlabs, CIVIC, and generic cookie/consent/gdpr patterns.
+const CMP_BLOCK_PATTERNS: string[] = [
+  // OneTrust
+  'cdn\\.cookielaw\\.org',
+  'optanon\\.blob\\.core',
+  'onetrust\\.com',
+  // Cookiebot
+  'consent\\.cookiebot\\.com',
+  'consentcdn\\.cookiebot\\.com',
+  // Quantcast
+  'quantcast\\.mgr\\.consensu\\.org',
+  'cmp\\.quantcast\\.com',
+  // Didomi
+  'sdk\\.privacy-center\\.org',
+  'api\\.privacy-center\\.org',
+  'cdn\\.didomi\\.io',
+  // TrustArc
+  'consent\\.trustarc\\.com',
+  'consent-pref\\.trustarc\\.com',
+  // Usercentrics
+  'app\\.usercentrics\\.eu',
+  'sdk\\.usercentrics\\.eu',
+  // Klaro
+  'cdn\\.kiprotect\\.com/klaro',
+  // Osano
+  'cmp\\.osano\\.com',
+  // Termly
+  'app\\.termly\\.io',
+  // CookieYes
+  'cdn-cookieyes\\.com',
+  'app\\.cookieyes\\.com',
+  // Complianz
+  'complianz\\.io',
+  // Iubenda
+  'cdn\\.iubenda\\.com/cs',
+  // Axeptio
+  'client\\.axept\\.io',
+  'static\\.axept\\.io',
+  // Sourcepoint
+  'sourcepoint\\.mgr\\.consensu\\.org',
+  'cdn\\.privacy-mgmt\\.com',
+  // CookieFirst
+  'consent\\.cookiefirst\\.com',
+  // Borlabs
+  'cdn\\.borlabs\\.io',
+  // CIVIC
+  'cc\\.cdn\\.civiccomputing\\.com',
+  // Generic patterns (catch custom implementations)
+  '/cookie-consent',
+  '/cookieconsent',
+  '/cookie-banner',
+  '/gdpr-consent',
+  '/consent-manager',
+]
+
+// Fallback cleanup script for banners that still appear (inline/custom implementations).
+// Approach based on reject_all_cookies, DuckDuckGo autoconsent, and screenshotone.com.
 const DISMISS_COOKIES_SCRIPT = `
 (function() {
   function isVisible(el) {
@@ -249,8 +305,9 @@ export function buildBody(
     }
   }
 
-  // Inject cookie dismissal script via addScriptTag
+  // Cookie banner dismissal: block CMP scripts + inject cleanup script
   if (formValues._dismissCookies === 'true') {
+    body.rejectRequestPattern = CMP_BLOCK_PATTERNS
     body.addScriptTag = [{ content: DISMISS_COOKIES_SCRIPT }]
   }
 
