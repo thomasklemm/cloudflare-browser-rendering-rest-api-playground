@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown, Scan } from 'lucide-react'
+import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown, Ruler } from 'lucide-react'
 import type { EndpointConfig, FieldConfig, InputMode } from '../types/api'
 
 interface EndpointFormProps {
@@ -16,8 +16,6 @@ interface EndpointFormProps {
   inputMode: InputMode
   onInputModeChange: (mode: InputMode) => void
   urlCount: number
-  onDetectWidth: () => void
-  detectingWidth: boolean
 }
 
 function FieldInput({
@@ -125,8 +123,6 @@ export function EndpointForm({
   inputMode,
   onInputModeChange,
   urlCount,
-  onDetectWidth,
-  detectingWidth,
 }: EndpointFormProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   // Track which endpoint was submitted to auto-reset when switching
@@ -276,9 +272,24 @@ export function EndpointForm({
             <ImageDown className="w-3.5 h-3.5 text-surface-500" />
             <div>
               <span className="text-xs text-surface-800">Load all images</span>
-              <p className="text-xs text-surface-500">Scrolls the page to trigger lazy-loaded images</p>
+              <p className="text-xs text-surface-500">Swaps lazy-load attributes to force all images to load</p>
             </div>
           </label>
+          {inputMode === 'url' && ['screenshot', 'snapshot', 'pdf'].includes(endpoint.id) && (
+            <label className="flex items-center gap-2.5 cursor-pointer px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg">
+              <input
+                type="checkbox"
+                checked={values._detectWidth === 'true'}
+                onChange={(e) => onChange('_detectWidth', e.target.checked ? 'true' : 'false')}
+                className="w-4 h-4 rounded border-surface-400 accent-accent-500"
+              />
+              <Ruler className="w-3.5 h-3.5 text-surface-500" />
+              <div>
+                <span className="text-xs text-surface-800">Auto-detect content width</span>
+                <p className="text-xs text-surface-500">Two sequential requests per URL — first detects the page's max-width, then uses it as the viewport width</p>
+              </div>
+            </label>
+          )}
         </div>
       )}
 
@@ -337,21 +348,6 @@ export function EndpointForm({
                   ) : null}
                 </div>
               ))}
-              {name === 'Viewport' && inputMode === 'url' && urlCount > 0 && (
-                <button
-                  type="button"
-                  onClick={onDetectWidth}
-                  disabled={detectingWidth || !settingsReady}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-surface-600 hover:text-surface-800 bg-surface-200 hover:bg-surface-300 border border-surface-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {detectingWidth ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Scan className="w-3.5 h-3.5" />
-                  )}
-                  {detectingWidth ? 'Detecting...' : 'Detect content width'}
-                </button>
-              )}
             </div>
           )}
         </div>

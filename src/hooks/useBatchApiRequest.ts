@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { EndpointConfig, Settings, ApiResponse, BatchResponseEntry } from '../types/api'
 import { buildFetchOptions } from '../lib/buildRequest'
+import { detectContentWidth } from '../lib/detectContentWidth'
 
 // Concurrency and pacing settings
 const MAX_CONCURRENT = 2
@@ -69,7 +70,21 @@ export function useBatchApiRequest() {
         url: string,
         index: number,
       ): Promise<void> {
-        const values = url === '__html__' ? formValues : { ...formValues, url }
+        let values = url === '__html__' ? formValues : { ...formValues, url }
+
+        // Auto-detect content width: make a lightweight /scrape call first
+        if (formValues._detectWidth === 'true' && url !== '__html__') {
+          try {
+            const width = await detectContentWidth(settings, url, controller.signal)
+            if (width) {
+              values = { ...values, 'viewport.width': String(width) }
+            }
+          } catch {
+            // Detection failed (timeout, abort, etc.) — proceed with default width
+          }
+          if (controller.signal.aborted) return
+        }
+
         const { url: fetchUrl, options } = buildFetchOptions(endpoint, settings, values)
         const start = performance.now()
 

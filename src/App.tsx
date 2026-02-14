@@ -4,7 +4,6 @@ import { endpoints } from './config/endpoints'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { useBatchApiRequest } from './hooks/useBatchApiRequest'
 import { buildCurlCommand } from './lib/buildRequest'
-import { detectContentWidth } from './lib/detectContentWidth'
 import { Header } from './components/Header'
 import { SettingsPanel } from './components/SettingsPanel'
 import { EndpointTabs } from './components/EndpointTabs'
@@ -58,23 +57,6 @@ export default function App() {
 
   const settingsReady = Boolean(settings.accountId && settings.apiToken)
   const formSubmitRef = useRef<HTMLButtonElement>(null)
-  const [detectingWidth, setDetectingWidth] = useState(false)
-
-  // Detect content width from the first URL, pre-fill viewport.width
-  const handleDetectWidth = useCallback(async () => {
-    const firstUrl = urlInput.split('\n').map((u) => u.trim()).find(Boolean)
-    if (!firstUrl || !settingsReady) return
-
-    setDetectingWidth(true)
-    try {
-      const width = await detectContentWidth(settings, firstUrl)
-      if (width) {
-        handleFieldChange('viewport.width', String(width))
-      }
-    } finally {
-      setDetectingWidth(false)
-    }
-  }, [urlInput, settingsReady, settings, handleFieldChange])
 
   // Parse URLs from the textarea (one per line)
   const urls = urlInput
@@ -152,8 +134,6 @@ export default function App() {
             inputMode={inputMode}
             onInputModeChange={setInputMode}
             urlCount={urls.length}
-            onDetectWidth={handleDetectWidth}
-            detectingWidth={detectingWidth}
           />
           <CurlPreview curl={curl} />
         </div>
