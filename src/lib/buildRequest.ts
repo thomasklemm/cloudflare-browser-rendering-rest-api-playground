@@ -18,6 +18,15 @@ export function buildBody(
 ): Record<string, unknown> {
   const body: Record<string, unknown> = {}
 
+  // Handle url/html input (only include the one with a value)
+  if (endpoint.hasUrlHtmlInput) {
+    if (formValues.url?.trim()) {
+      body.url = formValues.url.trim()
+    } else if (formValues.html?.trim()) {
+      body.html = formValues.html.trim()
+    }
+  }
+
   for (const field of endpoint.fields) {
     const raw = formValues[field.name]
     if (raw === undefined || raw === '') continue

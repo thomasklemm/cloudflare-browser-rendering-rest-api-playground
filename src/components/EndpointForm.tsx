@@ -106,11 +106,12 @@ function getMissingRequired(
 export function EndpointForm({ endpoint, values, onChange, onSubmit, loading, settingsReady, submitRef }: EndpointFormProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [submitted, setSubmitted] = useState(false)
-
-  // Derive input mode from values: if html has content and url doesn't, use html mode
-  const inputMode: InputMode = (values.html?.trim() && !values.url?.trim()) ? 'html' : 'url'
+  const [inputMode, setInputModeState] = useState<InputMode>(
+    (values.html?.trim() && !values.url?.trim()) ? 'html' : 'url',
+  )
 
   const setInputMode = (mode: InputMode) => {
+    setInputModeState(mode)
     // Clear the other field when switching modes
     if (mode === 'url') {
       onChange('html', '')
