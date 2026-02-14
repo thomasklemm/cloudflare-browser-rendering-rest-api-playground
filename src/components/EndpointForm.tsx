@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { useState, useEffect } from 'react'
-import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie } from 'lucide-react'
+import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown } from 'lucide-react'
 import type { EndpointConfig, FieldConfig, InputMode } from '../types/api'
 
 interface EndpointFormProps {
@@ -230,21 +230,36 @@ export function EndpointForm({ endpoint, values, onChange, onSubmit, loading, se
         </div>
       )}
 
-      {/* Dismiss cookie banners toggle */}
+      {/* Script injection toggles */}
       {endpoint.hasUrlHtmlInput && (
-        <label className="flex items-center gap-2.5 cursor-pointer px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg">
-          <input
-            type="checkbox"
-            checked={values._dismissCookies === 'true'}
-            onChange={(e) => onChange('_dismissCookies', e.target.checked ? 'true' : 'false')}
-            className="w-4 h-4 rounded border-surface-400 accent-accent-500"
-          />
-          <Cookie className="w-3.5 h-3.5 text-surface-500" />
-          <div>
-            <span className="text-xs text-surface-800">Dismiss cookie banners</span>
-            <p className="text-xs text-surface-500">Injects a script to click reject/accept buttons</p>
-          </div>
-        </label>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2.5 cursor-pointer px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg">
+            <input
+              type="checkbox"
+              checked={values._dismissCookies === 'true'}
+              onChange={(e) => onChange('_dismissCookies', e.target.checked ? 'true' : 'false')}
+              className="w-4 h-4 rounded border-surface-400 accent-accent-500"
+            />
+            <Cookie className="w-3.5 h-3.5 text-surface-500" />
+            <div>
+              <span className="text-xs text-surface-800">Dismiss cookie banners</span>
+              <p className="text-xs text-surface-500">Blocks CMP scripts and clicks reject/accept buttons</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-2.5 cursor-pointer px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg">
+            <input
+              type="checkbox"
+              checked={values._loadAllImages === 'true'}
+              onChange={(e) => onChange('_loadAllImages', e.target.checked ? 'true' : 'false')}
+              className="w-4 h-4 rounded border-surface-400 accent-accent-500"
+            />
+            <ImageDown className="w-3.5 h-3.5 text-surface-500" />
+            <div>
+              <span className="text-xs text-surface-800">Load all images</span>
+              <p className="text-xs text-surface-500">Scrolls the page to trigger lazy-loaded images</p>
+            </div>
+          </label>
+        </div>
       )}
 
       {mainFields.map((field) => (

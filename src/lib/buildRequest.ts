@@ -309,6 +309,44 @@ const DISMISS_COOKIES_SCRIPT = `
 })();
 `.trim()
 
+// Script that scrolls the page to trigger lazy-loaded images (IntersectionObserver),
+// then removes loading="lazy" attributes and scrolls back to top.
+const LOAD_ALL_IMAGES_SCRIPT = `
+(async function() {
+  // Remove loading="lazy" so images start fetching immediately once in view
+  document.querySelectorAll('img[loading="lazy"]').forEach(function(img) {
+    img.removeAttribute('loading');
+  });
+
+  // Scroll down the page one viewport at a time to trigger IntersectionObservers
+  var totalHeight = document.body.scrollHeight;
+  var viewportHeight = window.innerHeight;
+  var scrollPos = 0;
+
+  while (scrollPos < totalHeight) {
+    scrollPos += viewportHeight;
+    window.scrollTo(0, scrollPos);
+    await new Promise(function(r) { setTimeout(r, 100); });
+    // Page height may grow (infinite scroll, dynamic content)
+    totalHeight = document.body.scrollHeight;
+  }
+
+  // Scroll back to top
+  window.scrollTo(0, 0);
+
+  // Wait for images to finish loading
+  var images = Array.from(document.querySelectorAll('img[src]'));
+  await Promise.all(images.map(function(img) {
+    if (img.complete) return Promise.resolve();
+    return new Promise(function(r) {
+      img.addEventListener('load', r, { once: true });
+      img.addEventListener('error', r, { once: true });
+      setTimeout(r, 3000);
+    });
+  }));
+})();
+`.trim()
+
 function setNested(obj: Record<string, unknown>, path: string, value: unknown) {
   const keys = path.split('.')
   let current = obj
@@ -336,10 +374,20 @@ export function buildBody(
     }
   }
 
-  // Cookie banner dismissal: block CMP scripts + inject cleanup script
+  // Injected scripts (cookie dismissal, lazy-load images)
+  const scripts: { content: string }[] = []
+
   if (formValues._dismissCookies === 'true') {
     body.rejectRequestPattern = CMP_BLOCK_PATTERNS
-    body.addScriptTag = [{ content: DISMISS_COOKIES_SCRIPT }]
+    scripts.push({ content: DISMISS_COOKIES_SCRIPT })
+  }
+
+  if (formValues._loadAllImages === 'true') {
+    scripts.push({ content: LOAD_ALL_IMAGES_SCRIPT })
+  }
+
+  if (scripts.length > 0) {
+    body.addScriptTag = scripts
   }
 
   for (const field of endpoint.fields) {
