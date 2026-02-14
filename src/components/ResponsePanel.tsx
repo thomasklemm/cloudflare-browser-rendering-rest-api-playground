@@ -1,4 +1,6 @@
-import { Clock, AlertCircle, Loader2, Download } from 'lucide-react'
+import { useState } from 'react'
+import JSZip from 'jszip'
+import { Clock, AlertCircle, Loader2, Download, Archive } from 'lucide-react'
 import type { ApiResponse, ResponseType, BatchResponseEntry } from '../types/api'
 import { JsonViewer } from './viewers/JsonViewer'
 import { HtmlViewer } from './viewers/HtmlViewer'
@@ -119,11 +121,8 @@ function timestamp(): string {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
 }
 
-function buildDownloadName(url: string, responseType: ResponseType): string {
-  const ext = responseType === 'image' ? 'png' : 'pdf'
-  const label = responseType === 'image' ? 'screenshot' : 'document'
-  const ts = timestamp()
-  if (!url || url === '__html__') return `${label}-${ts}.${ext}`
+function urlSlug(url: string): string {
+  if (!url || url === '__html__') return 'html'
   try {
     const u = new URL(url)
     const host = u.hostname.replace(/^www\./, '').replace(/\./g, '-')
@@ -131,11 +130,80 @@ function buildDownloadName(url: string, responseType: ResponseType): string {
       .replace(/^\/|\/$/g, '')
       .replace(/[/\s]+/g, '-')
       .replace(/[^a-zA-Z0-9-]/g, '')
-    const slug = path ? `${host}-${path}` : host
-    return `${slug}-${label}-${ts}.${ext}`
+    return path ? `${host}-${path}` : host
   } catch {
-    return `${label}-${ts}.${ext}`
+    return 'page'
   }
+}
+
+const RESPONSE_TYPE_EXT: Record<ResponseType, string> = {
+  image: 'png',
+  pdf: 'pdf',
+  html: 'html',
+  json: 'json',
+  markdown: 'md',
+  snapshot: 'json',
+}
+
+const RESPONSE_TYPE_LABEL: Record<ResponseType, string> = {
+  image: 'screenshot',
+  pdf: 'document',
+  html: 'content',
+  json: 'data',
+  markdown: 'markdown',
+  snapshot: 'snapshot',
+}
+
+function buildDownloadName(url: string, responseType: ResponseType): string {
+  const ext = RESPONSE_TYPE_EXT[responseType] || 'bin'
+  const label = RESPONSE_TYPE_LABEL[responseType] || 'response'
+  return `${urlSlug(url)}-${label}-${timestamp()}.${ext}`
+}
+
+function isBinaryResponse(responseType: ResponseType): boolean {
+  return responseType === 'image' || responseType === 'pdf'
+}
+
+async function downloadAllAsZip(
+  entries: BatchResponseEntry[],
+  responseType: ResponseType,
+): Promise<void> {
+  const zip = new JSZip()
+  const ext = RESPONSE_TYPE_EXT[responseType] || 'bin'
+  const label = RESPONSE_TYPE_LABEL[responseType] || 'response'
+  const binary = isBinaryResponse(responseType)
+
+  // Deduplicate filenames
+  const usedNames = new Set<string>()
+
+  for (const entry of entries) {
+    if (!entry.response || entry.response.status >= 400 || !entry.response.data) continue
+
+    let name = `${urlSlug(entry.url)}-${label}.${ext}`
+    if (usedNames.has(name)) {
+      let i = 2
+      while (usedNames.has(`${urlSlug(entry.url)}-${label}-${i}.${ext}`)) i++
+      name = `${urlSlug(entry.url)}-${label}-${i}.${ext}`
+    }
+    usedNames.add(name)
+
+    if (binary) {
+      // Fetch the blob from the blob URL
+      const res = await fetch(entry.response.data as string)
+      const blob = await res.blob()
+      zip.file(name, blob)
+    } else {
+      zip.file(name, entry.response.data as string)
+    }
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${label}s-${timestamp()}.zip`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 function truncateUrl(url: string, maxLen = 30): string {
@@ -158,8 +226,13 @@ export function ResponsePanel({
   response,
   entryLoading,
 }: ResponsePanelProps) {
+  const [zipping, setZipping] = useState(false)
   const hasEntries = entries.length > 0
   const showTabs = entries.length > 1
+  const completedCount = entries.filter(
+    (e) => e.response && !e.loading && e.response.status < 400 && e.response.data,
+  ).length
+  const canDownloadAll = showTabs && completedCount >= 2
 
   // No entries yet — show placeholder
   if (!hasEntries && !loading) {
@@ -194,21 +267,44 @@ export function ResponsePanel({
     <div className="flex-1 flex flex-col min-h-0">
       {/* URL tabs (only when multiple) */}
       {showTabs && (
-        <div className="flex items-center gap-0 border-b border-surface-300 bg-surface-100 overflow-x-auto shrink-0">
-          {entries.map((entry, i) => (
+        <div className="flex items-center border-b border-surface-300 bg-surface-100 shrink-0">
+          <div className="flex items-center gap-0 overflow-x-auto flex-1 min-w-0">
+            {entries.map((entry, i) => (
+              <button
+                key={i}
+                onClick={() => onSelectIndex(i)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs whitespace-nowrap border-b-2 transition-colors ${
+                  i === activeIndex
+                    ? 'border-accent-500 text-surface-900 bg-surface-50'
+                    : 'border-transparent text-surface-500 hover:text-surface-700 hover:bg-surface-200'
+                }`}
+              >
+                <StatusDot entry={entry} />
+                {truncateUrl(entry.url)}
+              </button>
+            ))}
+          </div>
+          {canDownloadAll && (
             <button
-              key={i}
-              onClick={() => onSelectIndex(i)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs whitespace-nowrap border-b-2 transition-colors ${
-                i === activeIndex
-                  ? 'border-accent-500 text-surface-900 bg-surface-50'
-                  : 'border-transparent text-surface-500 hover:text-surface-700 hover:bg-surface-200'
-              }`}
+              onClick={async () => {
+                setZipping(true)
+                try {
+                  await downloadAllAsZip(entries, responseType)
+                } finally {
+                  setZipping(false)
+                }
+              }}
+              disabled={zipping}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-surface-500 hover:text-surface-800 whitespace-nowrap shrink-0 transition-colors disabled:opacity-50"
             >
-              <StatusDot entry={entry} />
-              {truncateUrl(entry.url)}
+              {zipping ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Archive className="w-3.5 h-3.5" />
+              )}
+              {zipping ? 'Zipping...' : 'Download All'}
             </button>
-          ))}
+          )}
         </div>
       )}
 
