@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Eye, Code, Download } from 'lucide-react'
+import { Eye, Code } from 'lucide-react'
 
 interface MarkdownViewerProps {
   data: string
@@ -30,21 +30,6 @@ export function MarkdownViewer({ data }: MarkdownViewerProps) {
         >
           <Code className="w-3.5 h-3.5" />
           Raw
-        </button>
-        <button
-          onClick={() => {
-            const blob = new Blob([data], { type: 'text/markdown;charset=utf-8' })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `markdown-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.md`
-            a.click()
-            URL.revokeObjectURL(url)
-          }}
-          className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded text-xs text-surface-600 hover:text-surface-800 transition-colors"
-        >
-          <Download className="w-3.5 h-3.5" />
-          Download .md
         </button>
       </div>
       {showRaw ? (

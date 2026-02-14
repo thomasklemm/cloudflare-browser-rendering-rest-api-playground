@@ -227,6 +227,25 @@ function isBinaryResponse(responseType: ResponseType): boolean {
   return responseType === 'image' || responseType === 'pdf'
 }
 
+function downloadText(content: string, filename: string, mime = 'text/plain;charset=utf-8') {
+  const blob = new Blob([content], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+/** Extract the content to zip/download for a given response, unwrapping CF envelopes for html/markdown. */
+function extractContent(data: string, responseType: ResponseType): string {
+  if (responseType === 'html' || responseType === 'markdown') {
+    const unwrapped = unwrapCfEnvelope(data)
+    if (unwrapped) return unwrapped.result
+  }
+  return data
+}
+
 async function downloadAllAsZip(
   entries: BatchResponseEntry[],
   responseType: ResponseType,
@@ -256,7 +275,7 @@ async function downloadAllAsZip(
       const blob = await res.blob()
       zip.file(name, blob)
     } else {
-      zip.file(name, entry.response.data as string)
+      zip.file(name, extractContent(entry.response.data as string, responseType))
     }
   }
 
@@ -381,33 +400,62 @@ export function ResponsePanel({
             {response.duration}ms
           </span>
           <span className="text-xs text-surface-500">{response.contentType}</span>
-          {response.status < 400 && response.data && isBinaryResponse(responseType) && (
-            <a
-              href={response.data as string}
-              download={buildDownloadName(entries[activeIndex]?.url || '', responseType)}
-              className="ml-auto flex items-center gap-1.5 px-2.5 py-1 text-xs text-surface-600 hover:text-surface-800 border border-surface-300 rounded-lg hover:bg-surface-200 transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Download
-            </a>
-          )}
-          {response.status < 400 && response.data && !isBinaryResponse(responseType) && (
-            <button
-              onClick={() => {
-                const blob = new Blob([response.data as string], { type: 'text/plain;charset=utf-8' })
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = buildDownloadName(entries[activeIndex]?.url || '', responseType)
-                a.click()
-                URL.revokeObjectURL(url)
-              }}
-              className="ml-auto flex items-center gap-1.5 px-2.5 py-1 text-xs text-surface-600 hover:text-surface-800 border border-surface-300 rounded-lg hover:bg-surface-200 transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Download
-            </button>
-          )}
+          {response.status < 400 && response.data && (() => {
+            const activeUrl = entries[activeIndex]?.url || ''
+            const data = response.data as string
+            const binary = isBinaryResponse(responseType)
+            const unwrapped = !binary ? unwrapCfEnvelope(data) : null
+            const ext = RESPONSE_TYPE_EXT[responseType] || 'bin'
+            const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs text-surface-600 hover:text-surface-800 border border-surface-300 hover:bg-surface-200 transition-colors'
+
+            if (binary) {
+              return (
+                <a
+                  href={data}
+                  download={buildDownloadName(activeUrl, responseType)}
+                  className={`ml-auto ${btnCls} rounded-lg`}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Download
+                </a>
+              )
+            }
+
+            if (unwrapped) {
+              // Two buttons grouped: extracted content (.md/.html) + raw JSON
+              return (
+                <div className="ml-auto flex items-center">
+                  <button
+                    onClick={() => downloadText(unwrapped.result, buildDownloadName(activeUrl, responseType))}
+                    className={`${btnCls} rounded-l-lg border-r-0`}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    .{ext}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const slug = urlSlug(activeUrl)
+                      const label = RESPONSE_TYPE_LABEL[responseType] || 'response'
+                      downloadText(data, `${slug}-${label}-${timestamp()}.json`)
+                    }}
+                    className={`${btnCls} rounded-r-lg`}
+                  >
+                    .json
+                  </button>
+                </div>
+              )
+            }
+
+            return (
+              <button
+                onClick={() => downloadText(data, buildDownloadName(activeUrl, responseType))}
+                className={`ml-auto ${btnCls} rounded-lg`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download
+              </button>
+            )
+          })()}
         </div>
       )}
 
