@@ -47,14 +47,14 @@ const viewportFields: FieldConfig[] = [
     name: 'viewport.width',
     label: 'Width',
     type: 'number',
-    placeholder: '1920',
+    placeholder: '1280',
     section: 'Viewport',
   },
   {
     name: 'viewport.height',
     label: 'Height',
     type: 'number',
-    placeholder: '1080',
+    placeholder: '720',
     section: 'Viewport',
   },
   {

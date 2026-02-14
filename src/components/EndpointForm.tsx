@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown } from 'lucide-react'
+import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown, Scan } from 'lucide-react'
 import type { EndpointConfig, FieldConfig, InputMode } from '../types/api'
 
 interface EndpointFormProps {
@@ -16,6 +16,8 @@ interface EndpointFormProps {
   inputMode: InputMode
   onInputModeChange: (mode: InputMode) => void
   urlCount: number
+  onDetectWidth: () => void
+  detectingWidth: boolean
 }
 
 function FieldInput({
@@ -123,6 +125,8 @@ export function EndpointForm({
   inputMode,
   onInputModeChange,
   urlCount,
+  onDetectWidth,
+  detectingWidth,
 }: EndpointFormProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   // Track which endpoint was submitted to auto-reset when switching
@@ -333,6 +337,21 @@ export function EndpointForm({
                   ) : null}
                 </div>
               ))}
+              {name === 'Viewport' && inputMode === 'url' && urlCount > 0 && (
+                <button
+                  type="button"
+                  onClick={onDetectWidth}
+                  disabled={detectingWidth || !settingsReady}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-surface-600 hover:text-surface-800 bg-surface-200 hover:bg-surface-300 border border-surface-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {detectingWidth ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Scan className="w-3.5 h-3.5" />
+                  )}
+                  {detectingWidth ? 'Detecting...' : 'Detect content width'}
+                </button>
+              )}
             </div>
           )}
         </div>
