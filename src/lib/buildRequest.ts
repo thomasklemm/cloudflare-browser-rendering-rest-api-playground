@@ -309,59 +309,78 @@ const DISMISS_COOKIES_SCRIPT = `
 })();
 `.trim()
 
-// Script that scrolls the page to trigger lazy-loaded images, waits for them,
-// then creates a sentinel element so the API knows when to proceed.
+// Script that force-loads lazy images without scrolling the page.
+// No scrolling is performed — scrolling corrupts page layout for screenshots
+// (sticky headers change state, CSS scroll animations fire, elements reposition).
+// Instead we directly swap src attributes and remove lazy-loading hints.
 // Sentinel: #__images_ready (used with waitForSelector)
 const LOAD_ALL_IMAGES_SCRIPT = `
 (async function() {
   function wait(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
 
-  // Step 1: Remove loading="lazy" so images load eagerly once in viewport
+  // Step 1: Remove loading="lazy" so the browser loads images eagerly
   document.querySelectorAll('img[loading="lazy"]').forEach(function(img) {
     img.removeAttribute('loading');
   });
-
-  // Step 2: Activate data-src / data-lazy-src patterns (lazysizes, etc.)
-  document.querySelectorAll('img[data-src]:not([src]), img[data-src][src=""]').forEach(function(img) {
-    img.src = img.getAttribute('data-src');
+  document.querySelectorAll('iframe[loading="lazy"]').forEach(function(el) {
+    el.removeAttribute('loading');
   });
-  document.querySelectorAll('img[data-lazy-src]:not([src]), img[data-lazy-src][src=""]').forEach(function(img) {
-    img.src = img.getAttribute('data-lazy-src');
+
+  // Step 2: Swap data-src / data-lazy-src / data-original → src
+  document.querySelectorAll('img[data-src]').forEach(function(img) {
+    if (!img.src || img.src === '' || img.src.indexOf('data:') === 0 || img.src.indexOf('about:') === 0) {
+      img.src = img.getAttribute('data-src');
+    }
+  });
+  document.querySelectorAll('img[data-lazy-src]').forEach(function(img) {
+    if (!img.src || img.src === '' || img.src.indexOf('data:') === 0) {
+      img.src = img.getAttribute('data-lazy-src');
+    }
+  });
+  document.querySelectorAll('img[data-original]').forEach(function(img) {
+    if (!img.src || img.src === '' || img.src.indexOf('data:') === 0) {
+      img.src = img.getAttribute('data-original');
+    }
+  });
+
+  // Step 3: Swap data-srcset → srcset on img and source elements
+  document.querySelectorAll('img[data-srcset]').forEach(function(img) {
+    if (!img.srcset) img.srcset = img.getAttribute('data-srcset');
   });
   document.querySelectorAll('source[data-srcset]').forEach(function(source) {
-    source.srcset = source.getAttribute('data-srcset');
+    if (!source.srcset) source.srcset = source.getAttribute('data-srcset');
   });
 
-  // Step 3: Scroll down the page slowly to trigger IntersectionObservers
-  var totalHeight = document.body.scrollHeight;
-  var viewportHeight = window.innerHeight;
-  var scrollPos = 0;
-  var maxScrolls = 100; // safety limit
+  // Step 4: Handle background-image lazy patterns (data-bg, data-background-image)
+  document.querySelectorAll('[data-bg]').forEach(function(el) {
+    if (!el.style.backgroundImage || el.style.backgroundImage === 'none') {
+      el.style.backgroundImage = 'url(' + el.getAttribute('data-bg') + ')';
+    }
+  });
+  document.querySelectorAll('[data-background-image]').forEach(function(el) {
+    if (!el.style.backgroundImage || el.style.backgroundImage === 'none') {
+      el.style.backgroundImage = 'url(' + el.getAttribute('data-background-image') + ')';
+    }
+  });
 
-  while (scrollPos < totalHeight && maxScrolls-- > 0) {
-    scrollPos += Math.floor(viewportHeight * 0.8);
-    window.scrollTo(0, scrollPos);
-    await wait(300);
-    // Page height may grow (dynamic content)
-    totalHeight = document.body.scrollHeight;
-  }
+  // Step 5: Give the browser time to start fetching the newly-assigned sources
+  await wait(500);
 
-  // Step 4: Scroll back to top
-  window.scrollTo(0, 0);
-  await wait(200);
-
-  // Step 5: Wait for all images to finish loading
+  // Step 6: Wait for all images to finish loading
   var images = Array.from(document.querySelectorAll('img[src]'));
   await Promise.all(images.map(function(img) {
     if (img.complete) return Promise.resolve();
     return new Promise(function(r) {
       img.addEventListener('load', r, { once: true });
       img.addEventListener('error', r, { once: true });
-      setTimeout(r, 5000);
+      setTimeout(r, 8000);
     });
   }));
 
-  // Step 6: Signal completion via sentinel element
+  // Step 7: Final settle time for any layout shifts from loaded images
+  await wait(300);
+
+  // Step 8: Signal completion via sentinel element
   var sentinel = document.createElement('div');
   sentinel.id = '__images_ready';
   sentinel.style.display = 'none';
