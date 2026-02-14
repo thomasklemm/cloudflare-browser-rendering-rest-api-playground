@@ -8,7 +8,7 @@ import type { EndpointConfig, Settings } from '../types/api'
 // rejectRequestPattern regexes block the JS that renders cookie consent banners.
 // Covers: OneTrust, Cookiebot, Quantcast, Didomi, TrustArc, Usercentrics, Klaro,
 // Osano, Termly, CookieYes, Complianz, Iubenda, Axeptio, Sourcepoint, CookieFirst,
-// Borlabs, CIVIC, and generic cookie/consent/gdpr patterns.
+// Borlabs, CIVIC, consentmanager.net, and generic cookie/consent/gdpr patterns.
 const CMP_BLOCK_PATTERNS: string[] = [
   // OneTrust
   'cdn\\.cookielaw\\.org',
@@ -55,6 +55,10 @@ const CMP_BLOCK_PATTERNS: string[] = [
   'cdn\\.borlabs\\.io',
   // CIVIC
   'cc\\.cdn\\.civiccomputing\\.com',
+  // consentmanager.net
+  'cdn\\.consentmanager\\.net',
+  'delivery\\.consentmanager\\.net',
+  'consentmanager\\.mgr\\.consensu\\.org',
   // Generic patterns (catch custom implementations)
   '/cookie-consent',
   '/cookieconsent',
@@ -80,15 +84,36 @@ const DISMISS_COOKIES_SCRIPT = `
     return true;
   }
 
-  function trySelectors(selectors) {
+  function trySelectors(selectors, root) {
+    root = root || document;
     for (var i = 0; i < selectors.length; i++) {
       try {
-        var el = document.querySelector(selectors[i]);
+        var el = root.querySelector(selectors[i]);
         if (el && isVisible(el)) return clickEl(el);
       } catch(e) {}
     }
     return false;
   }
+
+  // --- Step 0: Shadow DOM CMPs (Usercentrics v2 renders inside shadow root) ---
+  try {
+    var ucRoot = document.querySelector('#usercentrics-root');
+    if (ucRoot && ucRoot.shadowRoot) {
+      var sr = ucRoot.shadowRoot;
+      if (trySelectors([
+        '[data-testid="uc-deny-all-button"]',
+        '[data-testid="uc-accept-all-button"]',
+      ], sr)) return;
+    }
+  } catch(e) {}
+
+  // Programmatic Usercentrics API fallback
+  try {
+    if (window.UC_UI && typeof window.UC_UI.denyAllConsents === 'function') {
+      window.UC_UI.denyAllConsents();
+      return;
+    }
+  } catch(e) {}
 
   // --- Step 1: CMP-specific reject buttons ---
   var cmpReject = [
@@ -140,6 +165,9 @@ const DISMISS_COOKIES_SCRIPT = `
     // Sourcepoint / GDPR
     'button[title="Reject"]',
     'button[title="Reject All"]',
+    // consentmanager.net
+    '#cmpwelcomebtnno a',
+    '#cmpbntnono',
   ];
   if (trySelectors(cmpReject)) return;
 
@@ -206,6 +234,9 @@ const DISMISS_COOKIES_SCRIPT = `
     '#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll',
     '#CybotCookiebotDialogBodyButtonAccept',
     '#onetrust-accept-btn-handler',
+    // consentmanager.net
+    '#cmpwelcomebtnyes a',
+    '#cmpbntnotxt',
     '.didomi-button-highlight',
     '#didomi-notice-agree-button',
     '[data-testid="uc-accept-all-button"]',
@@ -249,8 +280,9 @@ const DISMISS_COOKIES_SCRIPT = `
     '.cookiefirst-root',
     '.termly-styles',
     '.osano-cm-window', '.osano-cm-dialog',
-    '.uc-banner-wrap',
+    '.uc-banner-wrap', '#usercentrics-root',
     '.klaro',
+    '#cmpbox', '#cmpbox2',
     '[id*="cookie-banner" i]', '[id*="cookiebanner" i]', '[id*="cookie-consent" i]',
     '[class*="cookie-banner" i]', '[class*="cookiebanner" i]', '[class*="cookie-consent" i]',
     '[id*="consent-banner" i]', '[class*="consent-banner" i]',
