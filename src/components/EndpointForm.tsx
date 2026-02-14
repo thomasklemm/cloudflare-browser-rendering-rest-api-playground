@@ -6,10 +6,18 @@ import { JsonSchemaBuilder } from './JsonSchemaBuilder'
 
 // Quick-start examples for the /json endpoint.
 // Ordered: broad/any-page → landing pages → content verticals → technical.
-const JSON_EXAMPLES = [
+interface JsonExample {
+  label: string
+  group: string
+  prompt: string
+  schema: string
+}
+
+const JSON_EXAMPLES: JsonExample[] = [
   // --- Works on any page ---
   {
     label: 'Page links',
+    group: 'Any page',
     prompt: 'Extract all links from this page with their text and URLs',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -34,6 +42,7 @@ const JSON_EXAMPLES = [
   },
   {
     label: 'Headings',
+    group: 'Any page',
     prompt: 'Extract all headings from the page organized by level',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -50,6 +59,7 @@ const JSON_EXAMPLES = [
   },
   {
     label: 'SEO meta',
+    group: 'Any page',
     prompt: 'Extract SEO metadata including title, description, Open Graph tags, and canonical URL',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -70,6 +80,7 @@ const JSON_EXAMPLES = [
   // --- Homepages & landing pages ---
   {
     label: 'Company overview',
+    group: 'Landing pages',
     prompt: 'Extract the company or product name, tagline, and a brief description of what they do',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -88,6 +99,7 @@ const JSON_EXAMPLES = [
   },
   {
     label: 'Features',
+    group: 'Landing pages',
     prompt: 'Extract all product features or benefits listed on this page',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -112,6 +124,7 @@ const JSON_EXAMPLES = [
   },
   {
     label: 'Testimonials',
+    group: 'Landing pages',
     prompt: 'Extract all customer testimonials or reviews from this page',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -139,6 +152,7 @@ const JSON_EXAMPLES = [
   // --- Content verticals ---
   {
     label: 'Article',
+    group: 'Content',
     prompt: 'Extract the article title, author, publication date, and a brief summary',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -156,6 +170,7 @@ const JSON_EXAMPLES = [
   },
   {
     label: 'Product info',
+    group: 'Content',
     prompt: 'Extract product information from this page',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -174,6 +189,7 @@ const JSON_EXAMPLES = [
   },
   {
     label: 'Pricing',
+    group: 'Content',
     prompt: 'Extract all pricing plans and their features from this page',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -200,6 +216,7 @@ const JSON_EXAMPLES = [
   },
   {
     label: 'Contact info',
+    group: 'Content',
     prompt: 'Extract business contact information from this page',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -228,6 +245,7 @@ const JSON_EXAMPLES = [
   },
   {
     label: 'Events',
+    group: 'Content',
     prompt: 'Extract all events or scheduled items from this page',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -256,6 +274,7 @@ const JSON_EXAMPLES = [
   // --- Technical / structural ---
   {
     label: 'Table data',
+    group: 'Content',
     prompt: 'Extract all tabular data from this page as structured rows',
     schema: JSON.stringify({
       type: 'json_schema',
@@ -573,22 +592,9 @@ export function EndpointForm({
 
       {/* Quick-start examples for /json endpoint */}
       {endpoint.id === 'json' && (
-        <div>
-          <span className="text-xs text-surface-600">Quick start</span>
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {JSON_EXAMPLES.map((ex) => (
-              <button
-                key={ex.label}
-                type="button"
-                onClick={() => {
-                  onChange('prompt', ex.prompt)
-                  onChange('response_format', ex.schema)
-                }}
-                className="px-2.5 py-1 text-xs bg-surface-200 border border-surface-300 rounded-md text-surface-700 hover:bg-surface-300 hover:text-surface-900 transition-colors"
-              >
-                {ex.label}
-              </button>
-            ))}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-surface-600">Quick start</span>
             {(values.prompt || values.response_format) && (
               <button
                 type="button"
@@ -596,12 +602,41 @@ export function EndpointForm({
                   onChange('prompt', '')
                   onChange('response_format', '')
                 }}
-                className="px-2.5 py-1 text-xs text-surface-500 hover:text-surface-700 transition-colors"
+                className="px-2 py-0.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
               >
-                Clear
+                Clear prompt & schema
               </button>
             )}
           </div>
+          {(() => {
+            const groups: { name: string; items: JsonExample[] }[] = []
+            for (const ex of JSON_EXAMPLES) {
+              const last = groups[groups.length - 1]
+              if (last && last.name === ex.group) {
+                last.items.push(ex)
+              } else {
+                groups.push({ name: ex.group, items: [ex] })
+              }
+            }
+            return groups.map((g) => (
+              <div key={g.name} className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-surface-500 w-full">{g.name}</span>
+                {g.items.map((ex) => (
+                  <button
+                    key={ex.label}
+                    type="button"
+                    onClick={() => {
+                      onChange('prompt', ex.prompt)
+                      onChange('response_format', ex.schema)
+                    }}
+                    className="px-2.5 py-1 text-xs bg-surface-200 border border-surface-300 rounded-md text-surface-700 hover:bg-surface-300 hover:text-surface-900 transition-colors"
+                  >
+                    {ex.label}
+                  </button>
+                ))}
+              </div>
+            ))
+          })()}
         </div>
       )}
 
