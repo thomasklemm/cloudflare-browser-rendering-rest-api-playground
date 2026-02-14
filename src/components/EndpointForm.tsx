@@ -16,6 +16,51 @@ interface JsonExample {
 const JSON_EXAMPLES: JsonExample[] = [
   // --- Works on any page ---
   {
+    label: 'Page summary',
+    group: 'Any page',
+    prompt: 'Summarize this page: extract the title, write a concise summary, identify the main topics, classify the content type (e.g. article, product page, landing page, documentation), and detect the language',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          summary: { type: 'string' },
+          topics: { type: 'array', items: { type: 'string' } },
+          content_type: { type: 'string' },
+          language: { type: 'string' },
+        },
+        required: ['title', 'summary'],
+      },
+    }),
+  },
+  {
+    label: 'Content outline',
+    group: 'Any page',
+    prompt: 'Analyze this page and produce a structured content outline: identify the main topic, then break down the key sections with a brief summary of what each section covers',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          main_topic: { type: 'string' },
+          sections: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                heading: { type: 'string' },
+                summary: { type: 'string' },
+              },
+              required: ['heading', 'summary'],
+            },
+          },
+        },
+        required: ['main_topic', 'sections'],
+      },
+    }),
+  },
+  {
     label: 'Page links',
     group: 'Any page',
     prompt: 'Extract all links from this page with their text and URLs',
@@ -37,23 +82,6 @@ const JSON_EXAMPLES: JsonExample[] = [
           },
         },
         required: ['links'],
-      },
-    }),
-  },
-  {
-    label: 'Headings',
-    group: 'Any page',
-    prompt: 'Extract all headings from the page organized by level',
-    schema: JSON.stringify({
-      type: 'json_schema',
-      schema: {
-        type: 'object',
-        properties: {
-          h1: { type: 'string' },
-          h2: { type: 'array', items: { type: 'string' } },
-          h3: { type: 'array', items: { type: 'string' } },
-        },
-        required: ['h1'],
       },
     }),
   },
