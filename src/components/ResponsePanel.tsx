@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import JSZip from 'jszip'
-import { Clock, AlertCircle, Loader2, Download, Archive } from 'lucide-react'
+import { Clock, AlertCircle, Loader2, Download, FolderDown } from 'lucide-react'
 import type { ApiResponse, ResponseType, BatchResponseEntry } from '../types/api'
 import { JsonViewer } from './viewers/JsonViewer'
 import { HtmlViewer } from './viewers/HtmlViewer'
@@ -294,15 +294,14 @@ export function ResponsePanel({
                   setZipping(false)
                 }
               }}
-              disabled={zipping}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-surface-500 hover:text-surface-800 whitespace-nowrap shrink-0 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-surface-500 hover:text-surface-800 whitespace-nowrap shrink-0 transition-colors"
             >
               {zipping ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <Archive className="w-3.5 h-3.5" />
+                <FolderDown className="w-3.5 h-3.5" />
               )}
-              {zipping ? 'Zipping...' : 'Download All'}
+              {zipping ? 'Zipping...' : `Download All (${completedCount})`}
             </button>
           )}
         </div>
