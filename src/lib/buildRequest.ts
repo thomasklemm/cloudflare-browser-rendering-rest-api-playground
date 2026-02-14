@@ -1,5 +1,227 @@
 import type { EndpointConfig, Settings } from '../types/api'
 
+// Self-contained cookie banner dismissal script.
+// Approach based on reject_all_cookies, DuckDuckGo autoconsent, and screenshotone.com.
+//
+// Strategy (in order):
+//  1. Try clicking CMP-specific "reject/decline" buttons by exact selector
+//  2. Try clicking generic reject buttons by selector patterns (class, id, aria, data attrs)
+//  3. Text-based scan: find any clickable element whose text matches reject keywords
+//  4. Fallback: try accept/close buttons (clearing the banner is better than leaving it)
+//  5. Last resort: hide banner elements via DOM removal + CSS override
+const DISMISS_COOKIES_SCRIPT = `
+(function() {
+  function isVisible(el) {
+    if (!el || el.hidden || el.style.display === 'none') return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+
+  function clickEl(el) {
+    if (!el) return false;
+    el.click();
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    return true;
+  }
+
+  function trySelectors(selectors) {
+    for (var i = 0; i < selectors.length; i++) {
+      try {
+        var el = document.querySelector(selectors[i]);
+        if (el && isVisible(el)) return clickEl(el);
+      } catch(e) {}
+    }
+    return false;
+  }
+
+  // --- Step 1: CMP-specific reject buttons ---
+  var cmpReject = [
+    // OneTrust
+    '#onetrust-reject-all-handler',
+    '.ot-reject-all-handler',
+    // Cookiebot
+    '#CybotCookiebotDialogBodyButtonDecline',
+    '#CybotCookiebotDialogBodyLevelButtonLevelOptinDeclineAll',
+    '.CybotCookiebotDialogBodyButton[data-function="decline"]',
+    // Quantcast
+    '.qc-cmp2-summary-buttons button[mode="secondary"]',
+    '.qc-cmp2-summary-buttons .qc-cmp2-reject-all',
+    // Didomi
+    '#didomi-notice-disagree-button',
+    '.didomi-button-secondary',
+    // TrustArc
+    '#truste-consent-required .truste-button2',
+    '.truste-consent-required .truste-button2',
+    // Usercentrics
+    '[data-testid="uc-deny-all-button"]',
+    '.uc-deny-all-button',
+    // Klaro
+    '.klaro .cn-decline',
+    '.klaro .cm-btn-decline',
+    // Cookiefirst
+    '.cookiefirst-reject-all',
+    '.cookiefirst-button-secondary',
+    // Termly
+    '.termly-reject-all-button',
+    '#termly-code-snippet-reject-all',
+    // Osano
+    '.osano-cm-reject-all',
+    '.osano-cm-denyAll',
+    // Complianz
+    '.cmplz-deny',
+    '#cmplz-deny-all',
+    // CookieYes / CookieLaw
+    '.cky-btn-reject',
+    '[data-cky-tag="reject-button"]',
+    // Borlabs
+    '.BorlabsCookie ._brlbs-refuse-btn',
+    // CIVIC Cookie Control
+    '#ccc-reject',
+    // Iubenda
+    '.iubenda-cs-reject-btn',
+    // Axeptio
+    '#axeptio_btn_dismiss',
+    // Sourcepoint / GDPR
+    'button[title="Reject"]',
+    'button[title="Reject All"]',
+  ];
+  if (trySelectors(cmpReject)) return;
+
+  // --- Step 2: Generic reject buttons by attribute patterns ---
+  var genericReject = [
+    '[data-testid*="reject" i]',
+    '[data-testid*="decline" i]',
+    '[data-testid*="deny" i]',
+    'button[class*="reject" i]',
+    'button[class*="decline" i]',
+    'button[class*="deny" i]',
+    'button[class*="refuse" i]',
+    'button[id*="reject" i]',
+    'button[id*="decline" i]',
+    'button[id*="deny" i]',
+    '[aria-label*="reject" i]',
+    '[aria-label*="decline" i]',
+    '[aria-label*="deny" i]',
+    '[aria-label*="refuse" i]',
+    '.cmp-reject-all-button',
+    '.reject-all-cookies',
+    '.cookie-reject-all',
+    '.gdpr-reject-all',
+    '#rejectAllCookies',
+    '#declineAllCookies',
+  ];
+  if (trySelectors(genericReject)) return;
+
+  // --- Step 3: Text-based scan for reject buttons ---
+  var rejectKeywords = [
+    'reject all', 'reject cookies', 'decline all', 'decline cookies',
+    'deny all', 'deny cookies', 'refuse all', 'refuse cookies',
+    'essential only', 'necessary only', 'nur notwendige',
+    'alle ablehnen', 'tout refuser', 'rechazar todo',
+    'reject', 'decline', 'deny', 'refuse'
+  ];
+  var acceptKeywords = ['accept', 'allow', 'agree', 'consent', 'akzeptieren', 'accepter'];
+
+  var clickables = document.querySelectorAll(
+    'button, a[role="button"], div[role="button"], span[role="button"], ' +
+    '[class*="cookie" i] a, [class*="consent" i] a, [id*="cookie" i] a'
+  );
+  for (var i = 0; i < clickables.length; i++) {
+    var el = clickables[i];
+    if (!isVisible(el)) continue;
+    var text = ((el.textContent || '') + ' ' + (el.getAttribute('aria-label') || '')).toLowerCase().trim();
+    if (!text) continue;
+
+    var isAccept = false;
+    for (var a = 0; a < acceptKeywords.length; a++) {
+      if (text.indexOf(acceptKeywords[a]) !== -1) { isAccept = true; break; }
+    }
+    if (isAccept) continue;
+
+    for (var r = 0; r < rejectKeywords.length; r++) {
+      if (text.indexOf(rejectKeywords[r]) !== -1) {
+        if (clickEl(el)) return;
+      }
+    }
+  }
+
+  // --- Step 4: Fallback - accept/close buttons (better than leaving the banner) ---
+  var fallbackAccept = [
+    '#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll',
+    '#CybotCookiebotDialogBodyButtonAccept',
+    '#onetrust-accept-btn-handler',
+    '.didomi-button-highlight',
+    '#didomi-notice-agree-button',
+    '[data-testid="uc-accept-all-button"]',
+    '.qc-cmp2-summary-buttons button[mode="primary"]',
+    '.osano-cm-accept-all',
+    '.cky-btn-accept',
+    '[data-cky-tag="accept-button"]',
+    '.cmplz-accept',
+    '.iubenda-cs-accept-btn',
+    '.cc-accept', '.cc-allow', '.cc-dismiss',
+    '[aria-label*="accept" i]',
+    '[aria-label*="allow" i]',
+    '[aria-label*="dismiss" i]',
+    'button[class*="accept" i]',
+    'button[class*="allow" i]',
+    'button[id*="accept" i]',
+  ];
+  if (trySelectors(fallbackAccept)) return;
+
+  // Text-based accept scan
+  var acceptTexts = ['accept all', 'accept cookies', 'allow all', 'allow cookies',
+    'i agree', 'got it', 'ok', 'continue', 'alle akzeptieren', 'tout accepter'];
+  for (var i = 0; i < clickables.length; i++) {
+    var el = clickables[i];
+    if (!isVisible(el)) continue;
+    var text = (el.textContent || '').toLowerCase().trim();
+    for (var a = 0; a < acceptTexts.length; a++) {
+      if (text === acceptTexts[a] || text.indexOf(acceptTexts[a]) !== -1) {
+        if (clickEl(el)) return;
+      }
+    }
+  }
+
+  // --- Step 5: Last resort - hide banners via DOM removal + CSS ---
+  var bannerSelectors = [
+    '#onetrust-consent-sdk', '#onetrust-banner-sdk',
+    '#CybotCookiebotDialog', '#CybotCookiebotDialogBodyUnderlay',
+    '.qc-cmp2-container',
+    '#truste-consent-track', '.truste-consent-overlay',
+    '.didomi-notice', '.didomi-popup-backdrop',
+    '.cookiefirst-root',
+    '.termly-styles',
+    '.osano-cm-window', '.osano-cm-dialog',
+    '.uc-banner-wrap',
+    '.klaro',
+    '[id*="cookie-banner" i]', '[id*="cookiebanner" i]', '[id*="cookie-consent" i]',
+    '[class*="cookie-banner" i]', '[class*="cookiebanner" i]', '[class*="cookie-consent" i]',
+    '[id*="consent-banner" i]', '[class*="consent-banner" i]',
+    '[id*="gdpr-banner" i]', '[class*="gdpr-banner" i]',
+    '.cc-banner', '.cc-window', '.cc-overlay',
+    '#gdpr-banner', '#cookie-notice', '#cookieNotice',
+  ];
+  var removed = false;
+  for (var i = 0; i < bannerSelectors.length; i++) {
+    try {
+      var els = document.querySelectorAll(bannerSelectors[i]);
+      els.forEach(function(el) { el.remove(); removed = true; });
+    } catch(e) {}
+  }
+
+  // Remove any lingering overlays/backdrops that block interaction
+  if (removed) {
+    var style = document.createElement('style');
+    style.textContent =
+      'body { overflow: auto !important; }' +
+      'html { overflow: auto !important; }' +
+      '.modal-backdrop, .overlay, [class*="backdrop"], [class*="overlay"] { display: none !important; }';
+    document.head.appendChild(style);
+  }
+})();
+`.trim()
+
 function setNested(obj: Record<string, unknown>, path: string, value: unknown) {
   const keys = path.split('.')
   let current = obj
@@ -25,6 +247,11 @@ export function buildBody(
     } else if (formValues.html?.trim()) {
       body.html = formValues.html.trim()
     }
+  }
+
+  // Inject cookie dismissal script via addScriptTag
+  if (formValues._dismissCookies === 'true') {
+    body.addScriptTag = [{ content: DISMISS_COOKIES_SCRIPT }]
   }
 
   for (const field of endpoint.fields) {
