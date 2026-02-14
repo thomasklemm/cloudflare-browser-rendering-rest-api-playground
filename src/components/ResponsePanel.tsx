@@ -69,6 +69,12 @@ function ResponseViewer({ response, responseType }: { response: ApiResponse; res
   }
 
   if (response.status >= 400 && typeof response.data === 'string') {
+    let rawAiResponse: string | null = null
+    try {
+      const parsed = JSON.parse(response.data) as { rawAiResponse?: string }
+      if (parsed.rawAiResponse) rawAiResponse = parsed.rawAiResponse
+    } catch { /* not JSON */ }
+
     return (
       <div className="p-4">
         <div className="flex items-start gap-3 mb-3">
@@ -76,6 +82,14 @@ function ResponseViewer({ response, responseType }: { response: ApiResponse; res
           <p className="text-sm text-red-400 font-medium">API Error</p>
         </div>
         <JsonViewer data={response.data} />
+        {rawAiResponse && (
+          <div className="mt-4">
+            <h4 className="text-xs text-surface-500 mb-2">Raw AI Response (unparsed)</h4>
+            <pre className="p-3 bg-surface-200 border border-surface-300 rounded-lg text-xs text-surface-700 whitespace-pre-wrap overflow-auto max-h-64">
+              {rawAiResponse}
+            </pre>
+          </div>
+        )}
       </div>
     )
   }

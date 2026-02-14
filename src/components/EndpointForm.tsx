@@ -2,6 +2,86 @@ import type { RefObject } from 'react'
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown, Ruler } from 'lucide-react'
 import type { EndpointConfig, FieldConfig, InputMode } from '../types/api'
+import { JsonSchemaBuilder } from './JsonSchemaBuilder'
+
+// Quick-start examples for the /json endpoint (from Cloudflare's docs)
+const JSON_EXAMPLES = [
+  {
+    label: 'Product info',
+    prompt: 'Extract product information from this page',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          price: { type: 'number' },
+          currency: { type: 'string' },
+          description: { type: 'string' },
+          availability: { type: 'string' },
+        },
+        required: ['name', 'price'],
+      },
+    }),
+  },
+  {
+    label: 'Article',
+    prompt: 'Extract the article title, author, publication date, and a brief summary',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          author: { type: 'string' },
+          date: { type: 'string' },
+          summary: { type: 'string' },
+        },
+        required: ['title'],
+      },
+    }),
+  },
+  {
+    label: 'Page links',
+    prompt: 'Extract all links from this page with their text and URLs',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          links: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                text: { type: 'string' },
+                url: { type: 'string' },
+              },
+              required: ['text', 'url'],
+            },
+          },
+        },
+        required: ['links'],
+      },
+    }),
+  },
+  {
+    label: 'Headings',
+    prompt: 'Extract all headings from the page organized by level',
+    schema: JSON.stringify({
+      type: 'json_schema',
+      schema: {
+        type: 'object',
+        properties: {
+          h1: { type: 'string' },
+          h2: { type: 'array', items: { type: 'string' } },
+          h3: { type: 'array', items: { type: 'string' } },
+        },
+        required: ['h1'],
+      },
+    }),
+  },
+]
 
 interface EndpointFormProps {
   endpoint: EndpointConfig
@@ -293,25 +373,55 @@ export function EndpointForm({
         </div>
       )}
 
-      {mainFields.map((field) => (
-        <div key={field.name}>
-          <label className="block text-xs text-surface-600 mb-1">
-            {field.label}
-            {field.required && <span className="text-accent-500 ml-1">*</span>}
-          </label>
-          <FieldInput
-            field={field}
+      {/* Quick-start examples for /json endpoint */}
+      {endpoint.id === 'json' && (
+        <div>
+          <span className="text-xs text-surface-600">Quick start</span>
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {JSON_EXAMPLES.map((ex) => (
+              <button
+                key={ex.label}
+                type="button"
+                onClick={() => {
+                  onChange('prompt', ex.prompt)
+                  onChange('response_format', ex.schema)
+                }}
+                className="px-2.5 py-1 text-xs bg-surface-200 border border-surface-300 rounded-md text-surface-700 hover:bg-surface-300 hover:text-surface-900 transition-colors"
+              >
+                {ex.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mainFields.map((field) =>
+        field.name === 'response_format' ? (
+          <JsonSchemaBuilder
+            key={field.name}
             value={values[field.name] || ''}
             onChange={(v) => onChange(field.name, v)}
-            error={showError(field)}
           />
-          {showError(field) ? (
-            <p className="text-xs text-red-400 mt-1">{field.label} is required</p>
-          ) : field.hint ? (
-            <p className="text-xs text-surface-500 mt-1">{field.hint}</p>
-          ) : null}
-        </div>
-      ))}
+        ) : (
+          <div key={field.name}>
+            <label className="block text-xs text-surface-600 mb-1">
+              {field.label}
+              {field.required && <span className="text-accent-500 ml-1">*</span>}
+            </label>
+            <FieldInput
+              field={field}
+              value={values[field.name] || ''}
+              onChange={(v) => onChange(field.name, v)}
+              error={showError(field)}
+            />
+            {showError(field) ? (
+              <p className="text-xs text-red-400 mt-1">{field.label} is required</p>
+            ) : field.hint ? (
+              <p className="text-xs text-surface-500 mt-1">{field.hint}</p>
+            ) : null}
+          </div>
+        ),
+      )}
 
       {[...sections.entries()].map(([name, fields]) => (
         <div key={name} className="border border-surface-300 rounded-lg overflow-hidden">
