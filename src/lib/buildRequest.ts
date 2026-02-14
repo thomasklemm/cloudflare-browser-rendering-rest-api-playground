@@ -408,7 +408,7 @@ export function buildBody(
     scripts.push({ content: LOAD_ALL_IMAGES_SCRIPT })
     // Wait for the sentinel element the script creates when all images are loaded
     if (!formValues.waitForSelector?.trim()) {
-      body.waitForSelector = '#__images_ready'
+      body.waitForSelector = { selector: '#__images_ready', timeout: 30000 }
     }
   }
 
@@ -419,6 +419,12 @@ export function buildBody(
   for (const field of endpoint.fields) {
     const raw = formValues[field.name]
     if (raw === undefined || raw === '') continue
+
+    // waitForSelector expects an object { selector, timeout? }, not a plain string
+    if (field.name === 'waitForSelector') {
+      body.waitForSelector = { selector: raw }
+      continue
+    }
 
     let value: unknown = raw
     if (field.type === 'number') {
