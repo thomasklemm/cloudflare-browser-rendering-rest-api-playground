@@ -113,6 +113,26 @@ function StatusDot({ entry }: { entry: BatchResponseEntry }) {
   return <span className="w-2 h-2 rounded-full bg-green-400" />
 }
 
+function buildDownloadName(url: string, responseType: ResponseType): string {
+  const ext = responseType === 'image' ? 'png' : 'pdf'
+  const label = responseType === 'image' ? 'screenshot' : 'document'
+  if (!url || url === '__html__') return `${label}.${ext}`
+  try {
+    const u = new URL(url)
+    // hostname → slug: "www.example.com" → "example-com"
+    const host = u.hostname.replace(/^www\./, '').replace(/\./g, '-')
+    // pathname → slug: "/about/team" → "about-team", "/" → ""
+    const path = u.pathname
+      .replace(/^\/|\/$/g, '')
+      .replace(/[/\s]+/g, '-')
+      .replace(/[^a-zA-Z0-9-]/g, '')
+    const slug = path ? `${host}-${path}` : host
+    return `${slug}-${label}.${ext}`
+  } catch {
+    return `${label}.${ext}`
+  }
+}
+
 function truncateUrl(url: string, maxLen = 30): string {
   if (url === '__html__') return 'HTML'
   try {
@@ -201,7 +221,7 @@ export function ResponsePanel({
           {response.status < 400 && (responseType === 'image' || responseType === 'pdf') && (
             <a
               href={response.data as string}
-              download={responseType === 'image' ? 'screenshot.png' : 'document.pdf'}
+              download={buildDownloadName(entries[activeIndex]?.url || '', responseType)}
               className="ml-auto flex items-center gap-1.5 px-2.5 py-1 text-xs text-surface-600 hover:text-surface-800 border border-surface-300 rounded-lg hover:bg-surface-200 transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
