@@ -1,4 +1,4 @@
-import { Clock, AlertCircle, Loader2 } from 'lucide-react'
+import { Clock, AlertCircle, Loader2, Download } from 'lucide-react'
 import type { ApiResponse, ResponseType, BatchResponseEntry } from '../types/api'
 import { JsonViewer } from './viewers/JsonViewer'
 import { HtmlViewer } from './viewers/HtmlViewer'
@@ -198,6 +198,16 @@ export function ResponsePanel({
             {response.duration}ms
           </span>
           <span className="text-xs text-surface-500">{response.contentType}</span>
+          {response.status < 400 && (responseType === 'image' || responseType === 'pdf') && (
+            <a
+              href={response.data as string}
+              download={responseType === 'image' ? 'screenshot.png' : 'document.pdf'}
+              className="ml-auto flex items-center gap-1.5 px-2.5 py-1 text-xs text-surface-600 hover:text-surface-800 border border-surface-300 rounded-lg hover:bg-surface-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download
+            </a>
+          )}
         </div>
       )}
 
