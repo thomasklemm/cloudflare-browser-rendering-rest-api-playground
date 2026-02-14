@@ -20,27 +20,38 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 export function useBatchApiRequest() {
-  const [entries, setEntries] = useState<BatchResponseEntry[]>([])
-  const [activeIndex, setActiveIndex] = useState(0)
-  const blobUrlsRef = useRef<string[]>([])
+  // Results keyed by endpoint ID — persists across tab switches
+  const [allEntries, setAllEntries] = useState<Record<string, BatchResponseEntry[]>>({})
+  const [allActiveIndexes, setAllActiveIndexes] = useState<Record<string, number>>({})
+  const [currentKey, setCurrentKey] = useState('')
+  const blobUrlsRef = useRef<Record<string, string[]>>({})
   const abortRef = useRef<AbortController | null>(null)
 
-  // Cleanup all blob URLs
-  const revokeBlobUrls = useCallback(() => {
-    for (const url of blobUrlsRef.current) {
-      URL.revokeObjectURL(url)
-    }
-    blobUrlsRef.current = []
+  // Derived state for the current endpoint
+  const entries = allEntries[currentKey] || []
+  const activeIndex = allActiveIndexes[currentKey] || 0
+  const loading = entries.some((e) => e.loading)
+
+  const setActiveIndex = useCallback((index: number) => {
+    setAllActiveIndexes((prev) => ({ ...prev, [currentKey]: index }))
+  }, [currentKey])
+
+  // Switch displayed endpoint — no abort, in-flight requests keep updating their key
+  const switchTo = useCallback((key: string) => {
+    setCurrentKey(key)
   }, [])
 
+  // Cleanup all blob URLs on unmount
   useEffect(() => {
+    const blobUrls = blobUrlsRef.current
+    const abort = abortRef.current
     return () => {
-      revokeBlobUrls()
-      abortRef.current?.abort()
+      for (const urls of Object.values(blobUrls)) {
+        for (const url of urls) URL.revokeObjectURL(url)
+      }
+      abort?.abort()
     }
-  }, [revokeBlobUrls])
-
-  const loading = entries.some((e) => e.loading)
+  }, [])
 
   const execute = useCallback(
     async (
@@ -49,21 +60,30 @@ export function useBatchApiRequest() {
       formValues: Record<string, string>,
       urls: string[],
     ) => {
+      const key = endpoint.id
+
       // Abort any in-flight requests
       abortRef.current?.abort()
-      revokeBlobUrls()
+
+      // Revoke old blob URLs for this endpoint only
+      for (const url of blobUrlsRef.current[key] || []) {
+        URL.revokeObjectURL(url)
+      }
+      blobUrlsRef.current[key] = []
 
       const controller = new AbortController()
       abortRef.current = controller
 
-      // Initialize entries
+      setCurrentKey(key)
+
+      // Initialize entries for this endpoint
       const initial: BatchResponseEntry[] = urls.map((url) => ({
         url,
         loading: true,
         response: null,
       }))
-      setEntries(initial)
-      setActiveIndex(0)
+      setAllEntries((prev) => ({ ...prev, [key]: initial }))
+      setAllActiveIndexes((prev) => ({ ...prev, [key]: 0 }))
 
       // Single request with retry-on-429 logic
       async function fetchWithRetry(
@@ -119,7 +139,8 @@ export function useBatchApiRequest() {
             if (isBinary) {
               const blob = await res.blob()
               const blobUrl = URL.createObjectURL(blob)
-              blobUrlsRef.current.push(blobUrl)
+              if (!blobUrlsRef.current[key]) blobUrlsRef.current[key] = []
+              blobUrlsRef.current[key].push(blobUrl)
               response = {
                 status: res.status,
                 statusText: res.statusText,
@@ -138,11 +159,12 @@ export function useBatchApiRequest() {
               }
             }
 
-            setEntries((prev) =>
-              prev.map((e, i) =>
+            setAllEntries((prev) => ({
+              ...prev,
+              [key]: (prev[key] || []).map((e, i) =>
                 i === index ? { ...e, loading: false, response } : e,
               ),
-            )
+            }))
             return
           } catch (err) {
             if (controller.signal.aborted) return
@@ -159,11 +181,12 @@ export function useBatchApiRequest() {
                 error: err instanceof Error ? err.message : 'Unknown error',
               }
 
-              setEntries((prev) =>
-                prev.map((e, i) =>
+              setAllEntries((prev) => ({
+                ...prev,
+                [key]: (prev[key] || []).map((e, i) =>
                   i === index ? { ...e, loading: false, response } : e,
                 ),
-              )
+              }))
             }
           }
         }
@@ -195,15 +218,8 @@ export function useBatchApiRequest() {
       )
       await Promise.allSettled(workers)
     },
-    [revokeBlobUrls],
+    [],
   )
 
-  const reset = useCallback(() => {
-    abortRef.current?.abort()
-    revokeBlobUrls()
-    setEntries([])
-    setActiveIndex(0)
-  }, [revokeBlobUrls])
-
-  return { entries, activeIndex, setActiveIndex, loading, execute, reset }
+  return { entries, activeIndex, setActiveIndex, loading, execute, switchTo }
 }

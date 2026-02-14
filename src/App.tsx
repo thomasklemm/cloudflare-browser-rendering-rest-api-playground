@@ -26,7 +26,7 @@ export default function App() {
   const [urlInput, setUrlInput] = useLocalStorage<string>('cf-br-urls', '')
   const [inputMode, setInputMode] = useLocalStorage<InputMode>('cf-br-input-mode', 'url')
 
-  const { entries, activeIndex, setActiveIndex, loading, execute, reset } = useBatchApiRequest()
+  const { entries, activeIndex, setActiveIndex, loading, execute, switchTo } = useBatchApiRequest()
 
   const endpoint = endpoints.find((e) => e.id === activeEndpoint)!
   const currentValues = useMemo(
@@ -50,9 +50,9 @@ export default function App() {
   const handleEndpointChange = useCallback(
     (id: EndpointId) => {
       setActiveEndpoint(id)
-      reset()
+      switchTo(id)
     },
-    [reset],
+    [switchTo],
   )
 
   const settingsReady = Boolean(settings.accountId && settings.apiToken)
