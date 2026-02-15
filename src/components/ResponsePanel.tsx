@@ -19,39 +19,55 @@ interface ResponsePanelProps {
 }
 
 function SnapshotViewer({ screenshot, html }: { screenshot: string | null; html: string | null }) {
+  const [tab, setTab] = useState<'screenshot' | 'html'>(screenshot ? 'screenshot' : 'html')
+
+  const hasBoth = screenshot && html
+  const tabCls = (active: boolean) =>
+    `px-3 py-1.5 text-xs border-b-2 transition-colors ${
+      active
+        ? 'border-accent-500 text-surface-900'
+        : 'border-transparent text-surface-500 hover:text-surface-700'
+    }`
+
   return (
-    <div className="space-y-4">
-      {screenshot && (
-        <div className="p-4 pb-0">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs text-surface-500">Screenshot</h3>
+    <div className="h-full flex flex-col">
+      {hasBoth && (
+        <div className="flex items-center border-b border-surface-300 bg-surface-100 shrink-0">
+          <button onClick={() => setTab('screenshot')} className={tabCls(tab === 'screenshot')}>
+            Screenshot
+          </button>
+          <button onClick={() => setTab('html')} className={tabCls(tab === 'html')}>
+            HTML
+          </button>
+          {tab === 'screenshot' && (
             <a
               href={`data:image/png;base64,${screenshot}`}
               download={`snapshot-screenshot-${timestamp()}.png`}
-              className="flex items-center gap-1 text-xs text-surface-500 hover:text-surface-700 transition-colors"
+              className="ml-auto flex items-center gap-1 px-3 text-xs text-surface-500 hover:text-surface-700 transition-colors"
             >
               <Download className="w-3 h-3" />
               Save image
             </a>
-          </div>
-          <img
-            src={`data:image/png;base64,${screenshot}`}
-            alt="Snapshot screenshot"
-            className="max-w-full rounded-lg border border-surface-300"
-          />
+          )}
         </div>
       )}
-      {html && (
-        <div>
-          <h3 className="text-xs text-surface-500 px-4 mb-2">HTML Content</h3>
-          <div className="h-[600px]">
-            <HtmlViewer data={html} />
+      <div className="flex-1 min-h-0">
+        {tab === 'screenshot' && screenshot && (
+          <div className="h-full overflow-auto p-4">
+            <img
+              src={`data:image/png;base64,${screenshot}`}
+              alt="Snapshot screenshot"
+              className="max-w-full rounded-lg border border-surface-300"
+            />
           </div>
-        </div>
-      )}
-      {!screenshot && !html && (
-        <p className="p-4 text-sm text-surface-500">No screenshot or HTML content in response.</p>
-      )}
+        )}
+        {tab === 'html' && html && (
+          <HtmlViewer data={html} />
+        )}
+        {!screenshot && !html && (
+          <p className="p-4 text-sm text-surface-500">No screenshot or HTML content in response.</p>
+        )}
+      </div>
     </div>
   )
 }
