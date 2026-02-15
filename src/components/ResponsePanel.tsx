@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import JSZip from 'jszip'
-import { Clock, AlertCircle, Loader2, Download, FolderDown } from 'lucide-react'
+import { Clock, AlertCircle, Loader2, Download, FolderDown, Info } from 'lucide-react'
 import type { ApiResponse, ResponseType, BatchResponseEntry } from '../types/api'
 import { JsonViewer } from './viewers/JsonViewer'
 import { HtmlViewer } from './viewers/HtmlViewer'
@@ -64,20 +64,6 @@ function unwrapCfEnvelope(data: string): { result: string; meta: Record<string, 
   return null
 }
 
-function MetaBadges({ meta }: { meta: Record<string, unknown> }) {
-  const entries = Object.entries(meta).filter(([, v]) => v !== undefined)
-  if (entries.length === 0) return null
-  return (
-    <div className="flex items-center gap-2 px-4 py-1.5 border-b border-surface-300 bg-surface-100">
-      {entries.map(([key, val]) => (
-        <span key={key} className="text-xs text-surface-500">
-          {key}: <span className="text-surface-700">{String(val)}</span>
-        </span>
-      ))}
-    </div>
-  )
-}
-
 function ResponseViewer({ response, responseType }: { response: ApiResponse; responseType: ResponseType }) {
   if (response.error || !response.data) {
     return (
@@ -130,17 +116,10 @@ function ResponseViewer({ response, responseType }: { response: ApiResponse; res
   if (responseType === 'html' || responseType === 'markdown') {
     const unwrapped = unwrapCfEnvelope(data)
     if (unwrapped) {
-      return (
-        <div className="flex flex-col h-full">
-          <MetaBadges meta={unwrapped.meta} />
-          <div className="flex-1 min-h-0">
-            {responseType === 'html' ? (
-              <HtmlViewer data={unwrapped.result} />
-            ) : (
-              <MarkdownViewer data={unwrapped.result} />
-            )}
-          </div>
-        </div>
+      return responseType === 'html' ? (
+        <HtmlViewer data={unwrapped.result} />
+      ) : (
+        <MarkdownViewer data={unwrapped.result} />
       )
     }
   }
@@ -246,23 +225,12 @@ function extractContent(data: string, responseType: ResponseType): string {
   return data
 }
 
-/** Check whether any completed entries have a CF JSON envelope. */
-function hasEnvelopeResponses(entries: BatchResponseEntry[], responseType: ResponseType): boolean {
-  if (responseType !== 'html' && responseType !== 'markdown') return false
-  return entries.some((e) => {
-    if (!e.response || e.response.status >= 400 || !e.response.data) return false
-    return unwrapCfEnvelope(e.response.data as string) !== null
-  })
-}
-
 async function downloadAllAsZip(
   entries: BatchResponseEntry[],
   responseType: ResponseType,
-  raw = false,
 ): Promise<void> {
   const zip = new JSZip()
-  const useRaw = raw || isBinaryResponse(responseType)
-  const ext = useRaw ? 'json' : (RESPONSE_TYPE_EXT[responseType] || 'bin')
+  const ext = RESPONSE_TYPE_EXT[responseType] || 'bin'
   const label = RESPONSE_TYPE_LABEL[responseType] || 'response'
   const binary = isBinaryResponse(responseType)
 
@@ -286,7 +254,7 @@ async function downloadAllAsZip(
       const blob = await res.blob()
       zip.file(name, blob)
     } else {
-      const content = raw ? (entry.response.data as string) : extractContent(entry.response.data as string, responseType)
+      const content = extractContent(entry.response.data as string, responseType)
       zip.file(name, content)
     }
   }
@@ -379,8 +347,6 @@ export function ResponsePanel({
             ))}
           </div>
           {canDownloadAll && (() => {
-            const hasEnvelope = hasEnvelopeResponses(entries, responseType)
-            const ext = RESPONSE_TYPE_EXT[responseType] || 'bin'
             const zipBtn = 'flex items-center gap-1.5 px-3 py-1.5 text-xs text-surface-500 hover:text-surface-800 whitespace-nowrap shrink-0 transition-colors'
 
             if (zipping) {
@@ -389,32 +355,6 @@ export function ResponsePanel({
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   Zipping...
                 </span>
-              )
-            }
-
-            if (hasEnvelope) {
-              return (
-                <div className="flex items-center shrink-0">
-                  <button
-                    onClick={async () => {
-                      setZipping(true)
-                      try { await downloadAllAsZip(entries, responseType) } finally { setZipping(false) }
-                    }}
-                    className={`${zipBtn} border-r border-surface-300`}
-                  >
-                    <FolderDown className="w-3.5 h-3.5" />
-                    All .{ext} ({completedCount})
-                  </button>
-                  <button
-                    onClick={async () => {
-                      setZipping(true)
-                      try { await downloadAllAsZip(entries, responseType, true) } finally { setZipping(false) }
-                    }}
-                    className={zipBtn}
-                  >
-                    All .json
-                  </button>
-                </div>
               )
             }
 
@@ -444,61 +384,73 @@ export function ResponsePanel({
             <Clock className="w-3.5 h-3.5" />
             {response.duration}ms
           </span>
-          <span className="text-xs text-surface-500">{response.contentType}</span>
-          {response.status < 400 && response.data && (() => {
-            const activeUrl = entries[activeIndex]?.url || ''
+          {(() => {
             const data = response.data as string
             const binary = isBinaryResponse(responseType)
             const unwrapped = !binary ? unwrapCfEnvelope(data) : null
-            const ext = RESPONSE_TYPE_EXT[responseType] || 'bin'
+            const activeUrl = entries[activeIndex]?.url || ''
             const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs text-surface-600 hover:text-surface-800 border border-surface-300 hover:bg-surface-200 transition-colors'
 
-            if (binary) {
-              return (
-                <a
-                  href={data}
-                  download={buildDownloadName(activeUrl, responseType)}
-                  className={`ml-auto ${btnCls} rounded-lg`}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Download
-                </a>
-              )
-            }
-
-            if (unwrapped) {
-              // Two buttons grouped: extracted content (.md/.html) + raw JSON
-              return (
-                <div className="ml-auto flex items-center">
-                  <button
-                    onClick={() => downloadText(unwrapped.result, buildDownloadName(activeUrl, responseType))}
-                    className={`${btnCls} rounded-l-lg border-r-0`}
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    .{ext}
-                  </button>
-                  <button
-                    onClick={() => {
-                      const slug = urlSlug(activeUrl)
-                      const label = RESPONSE_TYPE_LABEL[responseType] || 'response'
-                      downloadText(data, `${slug}-${label}-${timestamp()}.json`)
-                    }}
-                    className={`${btnCls} rounded-r-lg`}
-                  >
-                    .json
-                  </button>
-                </div>
-              )
-            }
-
             return (
-              <button
-                onClick={() => downloadText(data, buildDownloadName(activeUrl, responseType))}
-                className={`ml-auto ${btnCls} rounded-lg`}
-              >
-                <Download className="w-3.5 h-3.5" />
-                Download
-              </button>
+              <>
+                {unwrapped ? (
+                  <span className="relative group">
+                    <span className="flex items-center gap-1 text-xs text-surface-500 cursor-default">
+                      {response.contentType}
+                      <Info className="w-3.5 h-3.5" />
+                    </span>
+                    <div className="absolute top-full left-0 mt-1 z-50 hidden group-hover:block">
+                      <div className="bg-surface-100 border border-surface-300 rounded-lg shadow-lg p-3 min-w-48">
+                        <p className="text-[10px] uppercase tracking-wider text-surface-500 mb-1.5">Response envelope</p>
+                        {Object.entries(unwrapped.meta).filter(([, v]) => v !== undefined).map(([key, val]) => (
+                          <p key={key} className="text-xs text-surface-500">
+                            {key}: <span className="text-surface-700">{String(val)}</span>
+                          </p>
+                        ))}
+                        <button
+                          onClick={() => {
+                            const slug = urlSlug(activeUrl)
+                            const label = RESPONSE_TYPE_LABEL[responseType] || 'response'
+                            downloadText(data, `${slug}-${label}-${timestamp()}.json`)
+                          }}
+                          className="mt-2 flex items-center gap-1 text-xs text-accent-400 hover:text-accent-500 transition-colors"
+                        >
+                          <Download className="w-3 h-3" />
+                          Download JSON
+                        </button>
+                      </div>
+                    </div>
+                  </span>
+                ) : (
+                  <span className="text-xs text-surface-500">{response.contentType}</span>
+                )}
+                {response.status < 400 && response.data && (() => {
+                  if (binary) {
+                    return (
+                      <a
+                        href={data}
+                        download={buildDownloadName(activeUrl, responseType)}
+                        className={`ml-auto ${btnCls} rounded-lg`}
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Download
+                      </a>
+                    )
+                  }
+
+                  const content = unwrapped ? unwrapped.result : data
+
+                  return (
+                    <button
+                      onClick={() => downloadText(content, buildDownloadName(activeUrl, responseType))}
+                      className={`ml-auto ${btnCls} rounded-lg`}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download
+                    </button>
+                  )
+                })()}
+              </>
             )
           })()}
         </div>
