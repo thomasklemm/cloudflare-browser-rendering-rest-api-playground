@@ -64,6 +64,32 @@ function unwrapCfEnvelope(data: string): { result: string; meta: Record<string, 
   return null
 }
 
+/** Render a plain object as indented YAML-style key/value lines. */
+function YamlTree({ data, depth = 0 }: { data: Record<string, unknown>; depth?: number }) {
+  const entries = Object.entries(data).filter(([, v]) => v !== undefined)
+  if (entries.length === 0) return null
+  return (
+    <div style={depth > 0 ? { paddingLeft: `${depth * 12}px` } : undefined}>
+      {entries.map(([key, val]) => {
+        if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+          return (
+            <div key={key}>
+              <p className="text-xs text-surface-500">{key}:</p>
+              <YamlTree data={val as Record<string, unknown>} depth={depth + 1} />
+            </div>
+          )
+        }
+        const display = Array.isArray(val) ? JSON.stringify(val) : String(val)
+        return (
+          <p key={key} className="text-xs text-surface-500">
+            {key}: <span className="text-surface-700">{display}</span>
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 function ResponseViewer({ response, responseType }: { response: ApiResponse; responseType: ResponseType }) {
   if (response.error || !response.data) {
     return (
@@ -402,11 +428,7 @@ export function ResponsePanel({
                     <div className="absolute top-full left-0 mt-1 z-50 hidden group-hover:block">
                       <div className="bg-surface-100 border border-surface-300 rounded-lg shadow-lg p-3 min-w-48">
                         <p className="text-[10px] uppercase tracking-wider text-surface-500 mb-1.5">Response envelope</p>
-                        {Object.entries(unwrapped.meta).filter(([, v]) => v !== undefined).map(([key, val]) => (
-                          <p key={key} className="text-xs text-surface-500">
-                            {key}: <span className="text-surface-700">{typeof val === 'object' ? JSON.stringify(val) : String(val)}</span>
-                          </p>
-                        ))}
+                        <YamlTree data={unwrapped.meta} />
                         <button
                           onClick={() => {
                             const slug = urlSlug(activeUrl)
