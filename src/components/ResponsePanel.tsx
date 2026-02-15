@@ -18,33 +18,40 @@ interface ResponsePanelProps {
   entryLoading: boolean
 }
 
-function SnapshotViewer({ data }: { data: string }) {
-  let parsed: { html?: string; screenshot?: string }
-  try {
-    parsed = JSON.parse(data) as { html?: string; screenshot?: string }
-  } catch {
-    return <JsonViewer data={data} />
-  }
-
+function SnapshotViewer({ screenshot, html }: { screenshot: string | null; html: string | null }) {
   return (
-    <div className="space-y-4 p-4">
-      {parsed.screenshot && (
-        <div>
-          <h3 className="text-xs text-surface-500 mb-2">Screenshot</h3>
+    <div className="space-y-4">
+      {screenshot && (
+        <div className="p-4 pb-0">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs text-surface-500">Screenshot</h3>
+            <a
+              href={`data:image/png;base64,${screenshot}`}
+              download={`snapshot-screenshot-${timestamp()}.png`}
+              className="flex items-center gap-1 text-xs text-surface-500 hover:text-surface-700 transition-colors"
+            >
+              <Download className="w-3 h-3" />
+              Save image
+            </a>
+          </div>
           <img
-            src={`data:image/png;base64,${parsed.screenshot}`}
+            src={`data:image/png;base64,${screenshot}`}
             alt="Snapshot screenshot"
             className="max-w-full rounded-lg border border-surface-300"
           />
         </div>
       )}
-      {parsed.html && (
+      {html && (
         <div>
-          <h3 className="text-xs text-surface-500 mb-2">HTML Content</h3>
-          <HtmlViewer data={parsed.html} />
+          <h3 className="text-xs text-surface-500 px-4 mb-2">HTML Content</h3>
+          <div className="h-[600px]">
+            <HtmlViewer data={html} />
+          </div>
         </div>
       )}
-      {!parsed.screenshot && !parsed.html && <JsonViewer data={data} />}
+      {!screenshot && !html && (
+        <p className="p-4 text-sm text-surface-500">No screenshot or HTML content in response.</p>
+      )}
     </div>
   )
 }
@@ -59,6 +66,30 @@ function unwrapCfEnvelope(data: string): { result: string; meta: Record<string, 
     if (typeof parsed.result === 'string' && parsed.result) {
       const { result, ...meta } = parsed
       return { result: result as string, meta }
+    }
+  } catch { /* not JSON */ }
+  return null
+}
+
+/**
+ * Unwrap a CF /snapshot envelope like {"success":true,"result":{"screenshot":"...","content":"..."}}.
+ * Returns the extracted screenshot + html and remaining metadata, or null if not applicable.
+ */
+function unwrapSnapshotEnvelope(data: string): {
+  screenshot: string | null
+  html: string | null
+  meta: Record<string, unknown>
+} | null {
+  try {
+    const parsed = JSON.parse(data) as Record<string, unknown>
+    const result = parsed.result as Record<string, unknown> | undefined
+    if (result && typeof result === 'object' && !Array.isArray(result)) {
+      const screenshot = typeof result.screenshot === 'string' ? result.screenshot : null
+      const html = typeof result.content === 'string' ? result.content : null
+      if (screenshot || html) {
+        const { result: _result, ...meta } = parsed
+        return { screenshot, html, meta }
+      }
     }
   } catch { /* not JSON */ }
   return null
@@ -150,6 +181,14 @@ function ResponseViewer({ response, responseType }: { response: ApiResponse; res
     }
   }
 
+  // For snapshot, unwrap the CF envelope to get screenshot + content
+  if (responseType === 'snapshot') {
+    const unwrapped = unwrapSnapshotEnvelope(data)
+    if (unwrapped) {
+      return <SnapshotViewer screenshot={unwrapped.screenshot} html={unwrapped.html} />
+    }
+  }
+
   switch (responseType) {
     case 'html':
       return <HtmlViewer data={data} />
@@ -162,7 +201,7 @@ function ResponseViewer({ response, responseType }: { response: ApiResponse; res
     case 'markdown':
       return <MarkdownViewer data={data} />
     case 'snapshot':
-      return <SnapshotViewer data={data} />
+      return <SnapshotViewer screenshot={null} html={null} />
     default:
       return (
         <pre className="p-4 text-sm text-surface-700 whitespace-pre-wrap">{data}</pre>
@@ -414,12 +453,14 @@ export function ResponsePanel({
             const data = response.data as string
             const binary = isBinaryResponse(responseType)
             const unwrapped = !binary ? unwrapCfEnvelope(data) : null
+            const snapshotUnwrapped = !binary && responseType === 'snapshot' ? unwrapSnapshotEnvelope(data) : null
+            const envelopeMeta = unwrapped?.meta ?? snapshotUnwrapped?.meta ?? null
             const activeUrl = entries[activeIndex]?.url || ''
             const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs text-surface-600 hover:text-surface-800 border border-surface-300 hover:bg-surface-200 transition-colors'
 
             return (
               <>
-                {unwrapped ? (
+                {envelopeMeta ? (
                   <span className="relative group">
                     <span className="flex items-center gap-1 text-xs text-surface-500 cursor-default">
                       {response.contentType}
@@ -428,7 +469,7 @@ export function ResponsePanel({
                     <div className="absolute top-full left-0 mt-1 z-50 hidden group-hover:block">
                       <div className="bg-surface-100 border border-surface-300 rounded-lg shadow-lg p-3 min-w-48">
                         <p className="text-[10px] uppercase tracking-wider text-surface-500 mb-1.5">Response envelope</p>
-                        <YamlTree data={unwrapped.meta} />
+                        <YamlTree data={envelopeMeta} />
                         <button
                           onClick={() => {
                             const slug = urlSlug(activeUrl)
@@ -460,7 +501,8 @@ export function ResponsePanel({
                     )
                   }
 
-                  const content = unwrapped ? unwrapped.result : data
+                  // For snapshot, always download the full raw JSON envelope
+                  const content = snapshotUnwrapped ? data : (unwrapped ? unwrapped.result : data)
 
                   return (
                     <button
