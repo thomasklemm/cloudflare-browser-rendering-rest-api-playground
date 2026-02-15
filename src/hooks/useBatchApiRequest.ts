@@ -169,25 +169,34 @@ export function useBatchApiRequest() {
           } catch (err) {
             if (controller.signal.aborted) return
 
-            // Only set error on final attempt
-            if (attempt === MAX_RETRIES) {
-              const duration = Math.round(performance.now() - start)
-              const response: ApiResponse = {
-                status: 0,
-                statusText: 'Network Error',
-                contentType: '',
-                duration,
-                data: null,
-                error: err instanceof Error ? err.message : 'Unknown error',
-              }
-
-              setAllEntries((prev) => ({
-                ...prev,
-                [key]: (prev[key] || []).map((e, i) =>
-                  i === index ? { ...e, loading: false, response } : e,
-                ),
-              }))
+            // Retry with backoff for transient network errors
+            if (attempt < MAX_RETRIES) {
+              const delayMs = INITIAL_RETRY_MS * Math.pow(2, attempt)
+              await wait(delayMs, controller.signal).catch(() => {})
+              continue
             }
+
+            // Final attempt — set error with actionable message
+            const duration = Math.round(performance.now() - start)
+            const raw = err instanceof Error ? err.message : 'Unknown error'
+            const hint = raw === 'Failed to fetch'
+              ? 'Could not connect to the API proxy at /api/cf. Is the server running?'
+              : raw
+            const response: ApiResponse = {
+              status: 0,
+              statusText: 'Connection Failed',
+              contentType: '',
+              duration,
+              data: null,
+              error: `${hint} (after ${MAX_RETRIES + 1} attempts)`,
+            }
+
+            setAllEntries((prev) => ({
+              ...prev,
+              [key]: (prev[key] || []).map((e, i) =>
+                i === index ? { ...e, loading: false, response } : e,
+              ),
+            }))
           }
         }
       }
