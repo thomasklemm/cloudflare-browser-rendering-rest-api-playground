@@ -404,7 +404,7 @@ export function ResponsePanel({
                         <p className="text-[10px] uppercase tracking-wider text-surface-500 mb-1.5">Response envelope</p>
                         {Object.entries(unwrapped.meta).filter(([, v]) => v !== undefined).map(([key, val]) => (
                           <p key={key} className="text-xs text-surface-500">
-                            {key}: <span className="text-surface-700">{String(val)}</span>
+                            {key}: <span className="text-surface-700">{typeof val === 'object' ? JSON.stringify(val) : String(val)}</span>
                           </p>
                         ))}
                         <button
