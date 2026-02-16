@@ -122,7 +122,7 @@ Cloudflare Browser Rendering enforces different rate limits based on your Worker
 - **3 new browsers per minute**
 - **10 minutes of browser time per day**
 
-**Batch processing on Free:** For 6 URLs, expect ~50 seconds total (2 concurrent, 10s spacing).
+**Batch processing on Free:** For 6 URLs, expect ~50 seconds total (sequential processing, 10s between requests).
 
 ### Workers Paid Plan
 

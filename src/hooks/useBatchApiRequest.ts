@@ -18,7 +18,7 @@ const MAX_RETRIES = 3
 // Rate limits use FIXED per-second fill rate - must spread evenly, no burst
 const PLAN_LIMITS = {
   free: {
-    maxConcurrent: 2,          // Free allows 3 concurrent, use 2 to be safe
+    maxConcurrent: 1,          // Free: 1 req every 10s = serialize all requests
     maxRequestsPerMin: 5,      // Free allows 6/min, use 5 to allow retries
     minRequestSpacingMs: 10000, // 10 seconds between requests (1 every 10s) - matches official limit
     initialRetryMs: 10000,     // 10s initial retry delay
