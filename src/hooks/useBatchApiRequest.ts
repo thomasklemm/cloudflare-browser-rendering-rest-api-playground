@@ -24,7 +24,8 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
 // Ensures we respect the 6 requests/minute API limit globally
 const globalRequestTimestamps: number[] = []
 const RATE_LIMIT_WINDOW_MS = 60000  // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 6    // 6 requests per minute (Free plan)
+const RATE_LIMIT_MAX_REQUESTS = 5    // Conservative: 5 requests per minute (allows safety margin)
+const MIN_REQUEST_SPACING_MS = 2000  // Minimum 2 seconds between any two requests
 
 async function waitForRateLimit(signal?: AbortSignal): Promise<void> {
   const now = Date.now()
@@ -34,10 +35,25 @@ async function waitForRateLimit(signal?: AbortSignal): Promise<void> {
     globalRequestTimestamps.shift()
   }
 
-  // If we've made 6+ requests in the last minute, wait until the oldest one expires
+  // Enforce minimum spacing between requests (2 seconds)
+  if (globalRequestTimestamps.length > 0) {
+    const lastRequestTime = globalRequestTimestamps[globalRequestTimestamps.length - 1]
+    const timeSinceLastRequest = now - lastRequestTime
+    if (timeSinceLastRequest < MIN_REQUEST_SPACING_MS) {
+      const spacingWait = MIN_REQUEST_SPACING_MS - timeSinceLastRequest
+      await wait(spacingWait, signal)
+    }
+  }
+
+  // If we've made 5+ requests in the last minute, wait until the oldest one expires
+  const nowAfterSpacing = Date.now()
+  while (globalRequestTimestamps.length > 0 && globalRequestTimestamps[0] < nowAfterSpacing - RATE_LIMIT_WINDOW_MS) {
+    globalRequestTimestamps.shift()
+  }
+
   if (globalRequestTimestamps.length >= RATE_LIMIT_MAX_REQUESTS) {
     const oldestTimestamp = globalRequestTimestamps[0]
-    const waitTime = (oldestTimestamp + RATE_LIMIT_WINDOW_MS) - now
+    const waitTime = (oldestTimestamp + RATE_LIMIT_WINDOW_MS) - nowAfterSpacing
     if (waitTime > 0) {
       await wait(waitTime, signal)
     }
