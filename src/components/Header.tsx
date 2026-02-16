@@ -1,4 +1,4 @@
-import { Settings, Globe, ExternalLink } from 'lucide-react'
+import { Settings, Globe, ExternalLink, Github } from 'lucide-react'
 
 interface HeaderProps {
   showSettings: boolean
@@ -7,7 +7,7 @@ interface HeaderProps {
 
 export function Header({ showSettings, onToggleSettings }: HeaderProps) {
   return (
-    <header className="mx-6 mt-4 px-6 py-3 glass-panel rounded-2xl shadow-2xl flex items-center justify-between animate-slide-down">
+    <header className="mx-6 mt-3 px-6 py-2.5 glass-panel rounded-2xl shadow-2xl flex items-center justify-between animate-slide-down">
       <div className="flex items-center gap-3">
         {/* Animated gradient orb behind Globe icon */}
         <div className="relative w-8 h-8 shrink-0">
@@ -38,8 +38,8 @@ export function Header({ showSettings, onToggleSettings }: HeaderProps) {
         </div>
       </div>
 
-      {/* Right side: Docs link + Settings */}
-      <div className="flex items-center gap-3">
+      {/* Right side: Docs link + GitHub + Settings */}
+      <div className="flex items-center gap-2">
         <a
           href="https://developers.cloudflare.com/browser-rendering/rest-api/"
           target="_blank"
@@ -48,6 +48,16 @@ export function Header({ showSettings, onToggleSettings }: HeaderProps) {
         >
           View API Docs
           <ExternalLink className="w-3.5 h-3.5" />
+        </a>
+
+        <a
+          href="https://github.com/thomasklemm/cloudflare-browser-rendering-rest-api-playground"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-2 rounded-lg text-surface-600 hover:text-surface-800 hover:bg-glass-control transition-all"
+          title="View on GitHub"
+        >
+          <Github className="w-5 h-5" />
         </a>
 
         <button

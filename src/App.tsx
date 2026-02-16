@@ -10,7 +10,6 @@ import { EndpointTabs } from './components/EndpointTabs'
 import { EndpointForm } from './components/EndpointForm'
 import { CurlPreview } from './components/CurlPreview'
 import { ResponsePanel } from './components/ResponsePanel'
-import { Footer } from './components/Footer'
 
 export default function App() {
   const [settings, setSettings] = useLocalStorage<Settings>('cf-br-settings', {
@@ -153,8 +152,6 @@ export default function App() {
           />
         </div>
       </div>
-
-      <Footer />
     </div>
   )
 }
