@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import type { EndpointConfig, Settings, ApiResponse, BatchResponseEntry } from '../types/api'
+import type { EndpointConfig, Settings, ApiResponse, BatchResponseEntry, RequestState } from '../types/api'
 import { buildFetchOptions } from '../lib/buildRequest'
 
 // Concurrency and pacing settings
@@ -80,6 +80,7 @@ export function useBatchApiRequest() {
         url,
         loading: true,
         response: null,
+        state: { status: 'queued' } as RequestState,
       }))
       setAllEntries((prev) => ({ ...prev, [key]: initial }))
       setAllActiveIndexes((prev) => ({ ...prev, [key]: 0 }))
@@ -92,6 +93,14 @@ export function useBatchApiRequest() {
         const values = url === '__html__' ? formValues : { ...formValues, url }
         const { url: fetchUrl, options } = buildFetchOptions(endpoint, settings, values)
         const start = performance.now()
+
+        // Set state to running
+        setAllEntries((prev) => ({
+          ...prev,
+          [key]: (prev[key] || []).map((e, i) =>
+            i === index ? { ...e, state: { status: 'running', startTime: Date.now() } as RequestState } : e,
+          ),
+        }))
 
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
           if (controller.signal.aborted) return
@@ -108,7 +117,25 @@ export function useBatchApiRequest() {
               const delayMs = retryAfter
                 ? parseInt(retryAfter, 10) * 1000
                 : INITIAL_RETRY_MS * Math.pow(2, attempt)
+
+              // Set retrying state
+              setAllEntries((prev) => ({
+                ...prev,
+                [key]: (prev[key] || []).map((e, i) =>
+                  i === index ? { ...e, state: { status: 'retrying', attempt: attempt + 1, nextRetryIn: delayMs } as RequestState } : e,
+                ),
+              }))
+
               await wait(delayMs, controller.signal)
+
+              // Set back to running
+              setAllEntries((prev) => ({
+                ...prev,
+                [key]: (prev[key] || []).map((e, i) =>
+                  i === index ? { ...e, state: { status: 'running', startTime: Date.now() } as RequestState } : e,
+                ),
+              }))
+
               continue
             }
 
@@ -147,7 +174,7 @@ export function useBatchApiRequest() {
             setAllEntries((prev) => ({
               ...prev,
               [key]: (prev[key] || []).map((e, i) =>
-                i === index ? { ...e, loading: false, response } : e,
+                i === index ? { ...e, loading: false, response, state: { status: 'completed' } as RequestState } : e,
               ),
             }))
             return
@@ -157,7 +184,25 @@ export function useBatchApiRequest() {
             // Retry with backoff for transient network errors
             if (attempt < MAX_RETRIES) {
               const delayMs = INITIAL_RETRY_MS * Math.pow(2, attempt)
+
+              // Set retrying state
+              setAllEntries((prev) => ({
+                ...prev,
+                [key]: (prev[key] || []).map((e, i) =>
+                  i === index ? { ...e, state: { status: 'retrying', attempt: attempt + 1, nextRetryIn: delayMs } as RequestState } : e,
+                ),
+              }))
+
               await wait(delayMs, controller.signal).catch(() => {})
+
+              // Set back to running
+              setAllEntries((prev) => ({
+                ...prev,
+                [key]: (prev[key] || []).map((e, i) =>
+                  i === index ? { ...e, state: { status: 'running', startTime: Date.now() } as RequestState } : e,
+                ),
+              }))
+
               continue
             }
 
@@ -179,7 +224,7 @@ export function useBatchApiRequest() {
             setAllEntries((prev) => ({
               ...prev,
               [key]: (prev[key] || []).map((e, i) =>
-                i === index ? { ...e, loading: false, response } : e,
+                i === index ? { ...e, loading: false, response, state: { status: 'failed' } as RequestState } : e,
               ),
             }))
           }

@@ -53,10 +53,18 @@ export interface Settings {
   apiToken: string
 }
 
+export type RequestState =
+  | { status: 'queued' }
+  | { status: 'running'; startTime: number }
+  | { status: 'retrying'; attempt: number; nextRetryIn: number }
+  | { status: 'completed' }
+  | { status: 'failed' }
+
 export interface BatchResponseEntry {
   url: string
   loading: boolean
   response: ApiResponse | null
+  state?: RequestState
 }
 
 export interface BatchResult {

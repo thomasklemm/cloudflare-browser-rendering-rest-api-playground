@@ -7,6 +7,7 @@ import { HtmlViewer } from './viewers/HtmlViewer'
 import { ImageViewer } from './viewers/ImageViewer'
 import { PdfViewer } from './viewers/PdfViewer'
 import { MarkdownViewer } from './viewers/MarkdownViewer'
+import { RequestStatus } from './RequestStatus'
 
 interface ResponsePanelProps {
   entries: BatchResponseEntry[]
@@ -437,8 +438,8 @@ export function ResponsePanel({
     return (
       <div className="flex-1 flex items-center justify-center text-surface-500">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-surface-400 border-t-accent-500 rounded-full animate-spin" />
-          <span className="text-sm">Sending requests...</span>
+          <Loader2 className="w-8 h-8 text-accent-primary animate-spin" />
+          <span className="text-sm text-surface-700">Initializing requests...</span>
         </div>
       </div>
     )
@@ -587,8 +588,14 @@ export function ResponsePanel({
         {entryLoading ? (
           <div className="flex-1 flex items-center justify-center text-surface-500 h-full">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-surface-400 border-t-accent-500 rounded-full animate-spin" />
-              <span className="text-sm">Sending request...</span>
+              {entries[activeIndex]?.state ? (
+                <RequestStatus state={entries[activeIndex].state} />
+              ) : (
+                <>
+                  <div className="w-8 h-8 border-2 border-surface-400 border-t-accent-500 rounded-full animate-spin" />
+                  <span className="text-sm">Sending request...</span>
+                </>
+              )}
             </div>
           </div>
         ) : response ? (
