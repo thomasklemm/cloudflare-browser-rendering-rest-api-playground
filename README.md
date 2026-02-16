@@ -23,14 +23,14 @@ Cloudflare Browser Rendering is a powerful API that lets you control headless Ch
 - Extract links
 - And more
 
-This playground provides an intuitive interface to explore all these capabilities without writing any code.
+This playground provides an intuitive interface to explore all these capabilities without writing any code. **Unique to this playground**: test multiple URLs simultaneously with parallel batch processing — a feature not available in the raw API that makes it easy to evaluate API behavior across different websites and compare results side-by-side.
 
 ## Features
 
 ### Core Functionality
 
 - **All 8 API Endpoints** — Complete support for every Browser Rendering endpoint
-- **Multi-URL Batch Processing** — Test multiple URLs simultaneously with parallel execution
+- **Multi-URL Batch Processing** — Query multiple URLs simultaneously and see all results side-by-side. This playground-exclusive feature (not available in the raw API) makes it easy to evaluate API behavior across different websites, compare response times, and test configurations at scale.
 - **URL or HTML Input** — Provide URLs or paste raw HTML for processing
 - **Live Curl Preview** — See the exact API call with copy-to-clipboard
 - **Keyboard Shortcuts** — Cmd/Ctrl+Enter to send requests
@@ -105,9 +105,9 @@ Open http://localhost:5173 in your browser.
 2. Enter your Cloudflare Account ID and API Token
 3. Click "Save Settings"
 4. Select an endpoint (e.g., "Screenshot")
-5. Enter a URL (e.g., `https://example.com`)
+5. Enter one or more URLs (e.g., `https://example.com`) — add multiple URLs (one per line) to test in parallel
 6. Click "Send Request" or press Cmd/Ctrl+Enter
-7. View the response in the right panel
+7. View the response(s) in the right panel — switch between results using the tabs when testing multiple URLs
 
 ## Deployment
 

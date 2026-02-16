@@ -620,7 +620,7 @@ export function EndpointForm({
               <textarea
                 value={urlInput}
                 onChange={(e) => onUrlInputChange(e.target.value)}
-                placeholder={"https://example.com\nhttps://another.com"}
+                placeholder={"https://example.com\nhttps://another.com\nhttps://third-site.com"}
                 rows={Math.max(2, Math.min(6, urlInput.split('\n').length + 1))}
                 className={`w-full px-3 py-2 bg-surface-200 border ${
                   urlHtmlError('url')
@@ -628,8 +628,14 @@ export function EndpointForm({
                     : 'border-surface-300 focus:border-accent-500'
                 } rounded-lg text-sm text-surface-900 placeholder:text-surface-500 focus:outline-none resize-y font-mono`}
               />
-              {urlCount > 1 && (
-                <p className="text-xs text-surface-500 mt-1">{urlCount} URLs (one per line)</p>
+              {urlCount > 1 ? (
+                <p className="text-xs text-surface-500 mt-1">
+                  {urlCount} URLs — playground feature for batch evaluation (not in raw API)
+                </p>
+              ) : (
+                <p className="text-xs text-surface-500 mt-1">
+                  Add multiple URLs (one per line) to test in parallel
+                </p>
               )}
               {urlHtmlError('url') && (
                 <p className="text-xs text-red-400 mt-1">At least one URL is required</p>
