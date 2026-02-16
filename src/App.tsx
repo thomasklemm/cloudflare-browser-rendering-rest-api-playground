@@ -17,7 +17,7 @@ export default function App() {
     apiToken: '',
   })
   const [showSettings, setShowSettings] = useState(!settings.accountId || !settings.apiToken)
-  const [activeEndpoint, setActiveEndpoint] = useState<EndpointId>('content')
+  const [activeEndpoint, setActiveEndpoint] = useState<EndpointId>('screenshot')
   const [formValues, setFormValues] = useLocalStorage<Record<string, Record<string, string>>>(
     'cf-br-form-values',
     {},
