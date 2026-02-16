@@ -21,7 +21,7 @@ const docsUrlMap: Record<string, string> = {
 
 export function EndpointTabs({ endpoints, activeId, onSelect }: EndpointTabsProps) {
   return (
-    <div className="px-8 py-4">
+    <div className="px-8 py-3">
       <div className="flex gap-2 overflow-x-auto animate-slide-up">
         {endpoints.map((ep, index) => {
           const isActive = activeId === ep.id
@@ -31,7 +31,7 @@ export function EndpointTabs({ endpoints, activeId, onSelect }: EndpointTabsProp
                 type="button"
                 onClick={() => onSelect(ep.id)}
                 className={`
-                  relative px-5 py-2.5 rounded-full
+                  relative px-4 py-2 rounded-full
                   backdrop-blur-md
                   border transition-all duration-300
                   flex flex-col items-center gap-0.5

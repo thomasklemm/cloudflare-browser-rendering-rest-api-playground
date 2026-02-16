@@ -7,20 +7,20 @@ interface HeaderProps {
 
 export function Header({ showSettings, onToggleSettings }: HeaderProps) {
   return (
-    <header className="mx-6 mt-6 px-6 py-4 glass-panel rounded-2xl shadow-2xl flex items-center justify-between animate-slide-down">
-      <div className="flex items-center gap-4">
+    <header className="mx-6 mt-4 px-6 py-3 glass-panel rounded-2xl shadow-2xl flex items-center justify-between animate-slide-down">
+      <div className="flex items-center gap-3">
         {/* Animated gradient orb behind Globe icon */}
-        <div className="relative w-10 h-10 shrink-0">
+        <div className="relative w-8 h-8 shrink-0">
           <div
             className="absolute inset-0 bg-gradient-conic from-accent-primary via-accent-info to-accent-primary blur-lg opacity-60 animate-spin-slow"
             style={{ backgroundImage: 'conic-gradient(from 0deg, var(--color-accent-primary), var(--color-accent-info), var(--color-accent-primary))' }}
           />
-          <Globe className="relative w-10 h-10 text-accent-primary" />
+          <Globe className="relative w-8 h-8 text-accent-primary" />
         </div>
 
         {/* Title with gradient text */}
         <div className="flex flex-col">
-          <h1 className="text-xl font-light tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+          <h1 className="text-lg font-light tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
             Cloudflare Browser Rendering REST API
           </h1>
           <p className="text-xs text-surface-500 mt-0.5">
