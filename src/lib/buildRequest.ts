@@ -447,6 +447,10 @@ export function buildBody(
       value = Number(raw)
     } else if (field.type === 'boolean') {
       value = raw === 'true'
+      // Skip boolean values that match their default to keep requests clean
+      if (field.defaultValue !== undefined && value === field.defaultValue) {
+        continue
+      }
     } else if (field.type === 'json') {
       try {
         value = JSON.parse(raw)

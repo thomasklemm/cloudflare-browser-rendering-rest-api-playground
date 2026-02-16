@@ -171,6 +171,7 @@ const jsEnabledField: FieldConfig = {
   type: 'boolean',
   defaultValue: true,
   section: 'Navigation',
+  hint: 'Enable JavaScript execution (default: on)',
 }
 
 // Shared "advanced" fields included on every endpoint
@@ -217,6 +218,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'boolean',
         defaultValue: false,
         section: 'Screenshot',
+        hint: 'Capture entire scrollable page (default: off)',
       },
       {
         name: 'screenshotOptions.quality',
@@ -240,6 +242,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'boolean',
         defaultValue: false,
         section: 'Screenshot',
+        hint: 'Capture content beyond viewport boundaries (default: off)',
       },
       {
         name: 'selector',
@@ -316,8 +319,9 @@ export const endpoints: EndpointConfig[] = [
         name: 'pdfOptions.printBackground',
         label: 'Print Background',
         type: 'boolean',
-        defaultValue: true,
+        defaultValue: false,
         section: 'PDF Options',
+        hint: 'Include background colors and images (default: off)',
       },
       {
         name: 'pdfOptions.landscape',
@@ -325,6 +329,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'boolean',
         defaultValue: false,
         section: 'PDF Options',
+        hint: 'Landscape orientation (default: off - portrait)',
       },
       {
         name: 'pdfOptions.scale',
@@ -348,6 +353,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'boolean',
         defaultValue: false,
         section: 'PDF Options',
+        hint: 'Hide default white background (default: off)',
       },
       {
         name: 'pdfOptions.tagged',
@@ -355,6 +361,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'boolean',
         defaultValue: false,
         section: 'PDF Options',
+        hint: 'Generate accessible PDF with tags (default: off)',
       },
       {
         name: 'pdfOptions.outline',
@@ -421,6 +428,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'boolean',
         defaultValue: false,
         section: 'PDF Header/Footer',
+        hint: 'Display header and footer on each page (default: off)',
       },
       {
         name: 'pdfOptions.headerTemplate',
@@ -529,6 +537,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'boolean',
         defaultValue: false,
         section: 'Snapshot Options',
+        hint: 'Capture entire scrollable page (default: off)',
       },
       // Shared
       ...sharedFields,
@@ -573,14 +582,14 @@ export const endpoints: EndpointConfig[] = [
         label: 'Visible Links Only',
         type: 'boolean',
         defaultValue: false,
-        hint: 'Exclude hidden links',
+        hint: 'Exclude hidden links (default: off)',
       },
       {
         name: 'excludeExternalLinks',
         label: 'Exclude External Links',
         type: 'boolean',
         defaultValue: false,
-        hint: 'Only include same-domain links',
+        hint: 'Only include same-domain links (default: off)',
       },
       // Shared
       ...sharedFields,
