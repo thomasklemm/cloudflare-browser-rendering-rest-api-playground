@@ -122,7 +122,7 @@ export default function App() {
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 px-6 pb-6 gap-6">
         {/* Left: Form + Curl */}
-        <div className="lg:w-[400px] shrink-0 flex flex-col gap-6 overflow-y-auto glass-panel rounded-xl shadow-2xl p-5 animate-slide-left">
+        <div className="lg:w-[400px] shrink-0 flex flex-col gap-6 overflow-y-auto glass-panel rounded-xl shadow-2xl p-4 animate-slide-left">
           <EndpointForm
             endpoint={endpoint}
             values={currentValues}
