@@ -1,0 +1,12 @@
+name = "cloudflare-browser-rendering-playground"
+main = "worker/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers Sites configuration for serving the built frontend
+[site]
+bucket = "./dist"
+
+# Environment variables (if needed)
+# [vars]
+# ENVIRONMENT = "production"

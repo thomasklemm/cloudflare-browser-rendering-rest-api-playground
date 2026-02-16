@@ -37,6 +37,31 @@ npm run dev
 
 Open http://localhost:5173 and configure your Cloudflare Account ID and API Token in the settings panel.
 
+## Deployment
+
+This app can be deployed to Cloudflare Workers with automatic GitHub Actions integration.
+
+### Quick Deploy
+
+```bash
+# Authenticate with Cloudflare (first time only)
+npx wrangler login
+
+# Build and deploy
+npm run deploy
+```
+
+### Automatic Deployment (GitHub Actions)
+
+Pushing to the `main` branch automatically deploys to Cloudflare Workers.
+
+**Setup steps:**
+1. Create a Cloudflare API token at https://dash.cloudflare.com/profile/api-tokens
+2. Add it as `CLOUDFLARE_API_TOKEN` secret in GitHub repo settings
+3. Push to `main` branch
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
+
 ### API Token
 
 Create an API token at https://dash.cloudflare.com/profile/api-tokens with the permission **Account > Browser Rendering > Edit**.

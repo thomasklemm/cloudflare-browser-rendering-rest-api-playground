@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Loader2, Clock, AlertCircle, RotateCw } from 'lucide-react'
+import { Loader2, AlertCircle, RotateCw } from 'lucide-react'
 import type { RequestState } from '../types/api'
 
 interface RequestStatusProps {
