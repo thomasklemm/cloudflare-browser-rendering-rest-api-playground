@@ -3,10 +3,12 @@ import type { EndpointConfig, Settings, ApiResponse, BatchResponseEntry, Request
 import { buildFetchOptions } from '../lib/buildRequest'
 
 // Concurrency and pacing settings
-const MAX_CONCURRENT = 2
-const STAGGER_MS = 500
+// Cloudflare Browser Rendering REST API limits:
+// - Workers Free: 6 requests/minute, 3 concurrent browsers
+// - Paid: 10 concurrent browsers, higher rate limits
+const MAX_CONCURRENT = 1  // Serialize requests to respect rate limits
 const MAX_RETRIES = 3
-const INITIAL_RETRY_MS = 2000
+const INITIAL_RETRY_MS = 5000  // Longer initial retry delay to respect rate limits
 
 function wait(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -16,6 +18,38 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
       reject(new DOMException('Aborted', 'AbortError'))
     }, { once: true })
   })
+}
+
+// Global rate limiter: tracks recent request timestamps across all endpoint tabs
+// Ensures we respect the 6 requests/minute API limit globally
+const globalRequestTimestamps: number[] = []
+const RATE_LIMIT_WINDOW_MS = 60000  // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 6    // 6 requests per minute (Free plan)
+
+async function waitForRateLimit(signal?: AbortSignal): Promise<void> {
+  const now = Date.now()
+
+  // Clean up timestamps older than 1 minute
+  while (globalRequestTimestamps.length > 0 && globalRequestTimestamps[0] < now - RATE_LIMIT_WINDOW_MS) {
+    globalRequestTimestamps.shift()
+  }
+
+  // If we've made 6+ requests in the last minute, wait until the oldest one expires
+  if (globalRequestTimestamps.length >= RATE_LIMIT_MAX_REQUESTS) {
+    const oldestTimestamp = globalRequestTimestamps[0]
+    const waitTime = (oldestTimestamp + RATE_LIMIT_WINDOW_MS) - now
+    if (waitTime > 0) {
+      await wait(waitTime, signal)
+    }
+    // Clean up again after waiting
+    const nowAfterWait = Date.now()
+    while (globalRequestTimestamps.length > 0 && globalRequestTimestamps[0] < nowAfterWait - RATE_LIMIT_WINDOW_MS) {
+      globalRequestTimestamps.shift()
+    }
+  }
+
+  // Record this request
+  globalRequestTimestamps.push(Date.now())
 }
 
 export function useBatchApiRequest() {
@@ -104,6 +138,14 @@ export function useBatchApiRequest() {
 
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
           if (controller.signal.aborted) return
+
+          // Wait for rate limit before making request
+          try {
+            await waitForRateLimit(controller.signal)
+          } catch (err) {
+            if (controller.signal.aborted) return
+            throw err
+          }
 
           try {
             const res = await fetch(fetchUrl, {
@@ -231,7 +273,8 @@ export function useBatchApiRequest() {
         }
       }
 
-      // Concurrency-limited execution with staggered starts
+      // Concurrency-limited execution
+      // Rate limiting is handled by waitForRateLimit() inside fetchWithRetry
       const queue = urls.map((url, index) => ({ url, index }))
       let nextIdx = 0
 
@@ -239,13 +282,6 @@ export function useBatchApiRequest() {
         while (nextIdx < queue.length) {
           if (controller.signal.aborted) return
           const { url, index } = queue[nextIdx++]
-
-          // Stagger: wait before starting each request after the first
-          if (index > 0) {
-            await wait(STAGGER_MS, controller.signal).catch(() => {})
-            if (controller.signal.aborted) return
-          }
-
           await fetchWithRetry(url, index)
         }
       }
