@@ -5,8 +5,8 @@
 <h1 align="center">Cloudflare Browser Rendering Playground</h1>
 
 <p align="center">
-  Test all 8 <a href="https://developers.cloudflare.com/browser-rendering/rest-api/">Cloudflare Browser Rendering REST API</a> endpoints directly in your browser.<br/>
-  Batch multiple URLs, preview curl commands, and render results inline.
+  A visual playground for the <a href="https://developers.cloudflare.com/browser-rendering/rest-api/">Cloudflare Browser Rendering REST API</a>.<br/>
+  Take screenshots, generate PDFs, extract data — no code required.
 </p>
 
 <p align="center">
@@ -28,30 +28,15 @@
 
 ## Why This Exists
 
-Cloudflare Browser Rendering lets you control headless Chrome on Cloudflare's edge network — take screenshots, generate PDFs, extract data with AI, convert pages to markdown, and more. But testing these endpoints means writing fetch calls and parsing binary responses by hand.
+Cloudflare Browser Rendering gives you headless Chrome on Cloudflare's edge — screenshots, PDFs, AI data extraction, markdown conversion, scraping, and more. But testing it means writing fetch calls and parsing binary responses by hand.
 
-This playground gives you a GUI for the entire API. Pick an endpoint, enter a URL, hit send, see the result. No code required.
+This playground gives you a GUI for the entire API. Pick an endpoint, enter a URL, hit send, see the result.
 
-**What makes it useful:**
-
-- **Batch processing** — test multiple URLs in parallel and compare results side-by-side (not possible with the raw API)
+- **Batch URLs** — test multiple sites in parallel, compare results side-by-side
 - **Live curl preview** — see the exact API call, copy it to your terminal
-- **Inline rendering** — screenshots, PDFs, JSON trees, and markdown render directly in the response panel
-- **Cookie banner dismissal** — blocks 18+ consent management providers so you get clean screenshots
+- **Inline rendering** — images, PDFs, JSON trees, and markdown render directly in the response panel
+- **Cookie banner dismissal** — blocks 18+ consent providers for clean screenshots
 - **Persistent state** — credentials and form values survive page refreshes
-
-## Endpoints
-
-| Endpoint | What it does | Response |
-| --- | --- | --- |
-| `/screenshot` | Capture screenshots (PNG, JPEG, WebP) | Image |
-| `/pdf` | Generate PDFs with custom formatting | PDF |
-| `/json` | Extract structured data using AI | JSON |
-| `/content` | Get fully rendered HTML after JS execution | HTML |
-| `/markdown` | Convert pages to clean Markdown | Markdown |
-| `/snapshot` | HTML + base64 screenshot in one call | JSON |
-| `/scrape` | Extract elements via CSS selectors | JSON |
-| `/links` | Extract all links from a page | JSON |
 
 ## Quick Start
 
