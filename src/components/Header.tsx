@@ -21,17 +21,17 @@ export function Header({ showSettings, onToggleSettings }: HeaderProps) {
         {/* Title with gradient text */}
         <div className="flex flex-col">
           <h1 className="text-xl font-light tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-            Browser Rendering Playground
+            Cloudflare Browser Rendering REST API
           </h1>
           <p className="text-xs text-surface-500 mt-0.5">
-            Third-party tool powered by{' '}
+            Interactive playground for the{' '}
             <a
               href="https://developers.cloudflare.com/browser-rendering/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-accent-primary hover:text-accent-500 transition-colors inline-flex items-center gap-0.5"
             >
-              Cloudflare
+              Cloudflare Browser Rendering REST API
               <ExternalLink className="w-3 h-3" />
             </a>
           </p>
