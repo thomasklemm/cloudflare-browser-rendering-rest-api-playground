@@ -12,17 +12,21 @@ import { buildFetchOptions } from '../lib/buildRequest'
 const MAX_RETRIES = 3
 
 // Plan-specific rate limit configurations
+// Official limits: https://developers.cloudflare.com/browser-rendering/limits/
+// Free: 6 req/min (1 every 10s), 3 concurrent, 3 new browsers/min
+// Paid: 180 req/min (3/sec), 30 concurrent, 30 new browsers/min
+// Rate limits use FIXED per-second fill rate - must spread evenly, no burst
 const PLAN_LIMITS = {
   free: {
     maxConcurrent: 2,          // Free allows 3 concurrent, use 2 to be safe
     maxRequestsPerMin: 5,      // Free allows 6/min, use 5 to allow retries
-    minRequestSpacingMs: 10000, // 10 seconds between requests (1 every 10s)
+    minRequestSpacingMs: 10000, // 10 seconds between requests (1 every 10s) - matches official limit
     initialRetryMs: 10000,     // 10s initial retry delay
   },
   paid: {
     maxConcurrent: 10,         // Paid allows 30 concurrent, use 10 for reasonable batch size
     maxRequestsPerMin: 150,    // Paid allows 180/min, use 150 to be safe
-    minRequestSpacingMs: 400,  // ~400ms between requests (2.5/sec, under 3/sec limit)
+    minRequestSpacingMs: 350,  // 350ms between requests (2.86/sec, under 3/sec limit with safety margin)
     initialRetryMs: 5000,      // 5s initial retry delay
   },
 } as const
