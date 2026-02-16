@@ -620,79 +620,10 @@ Extracts all hyperlinks from a rendered page.
 
 ---
 
-## Gap Analysis: Current App vs. API
+## Coverage: App vs. API
 
-The following parameters are documented in the API but **not yet implemented** in the app's endpoint configuration (`src/config/endpoints.ts`):
+All documented API parameters are implemented in the app's endpoint configuration (`src/config/endpoints.ts`).
 
-### Missing from ALL Endpoints
+Every endpoint includes the full set of shared parameters (viewport, authentication, cookies, headers, request filtering, script/style injection, JavaScript toggle) plus all endpoint-specific parameters.
 
-| Parameter | Description |
-|-----------|-------------|
-| `authenticate` | HTTP Basic Auth credentials (username/password) |
-| `cookies` | Cookie configuration array |
-| `setExtraHTTPHeaders` | Custom HTTP headers object |
-| `rejectRequestPattern` | Regex patterns to block requests (used internally for cookie dismissal but not exposed as a form field) |
-| `allowRequestPattern` | Regex patterns to allow requests |
-| `rejectResourceTypes` | Block resource types (e.g., image, stylesheet, font, script) |
-| `allowResourceTypes` | Allow only specific resource types |
-| `addScriptTag` | Script injection (used internally but not exposed as form field) |
-| `addStyleTag` | Style injection |
-| `userAgent` | Custom user agent string |
-| `setJavaScriptEnabled` | Enable/disable JavaScript |
-
-### Missing from `/screenshot`
-
-| Parameter | Description |
-|-----------|-------------|
-| `selector` | CSS selector to screenshot a specific element |
-| `screenshotOptions.clip` | Capture a specific rectangular region (x, y, width, height) |
-| `screenshotOptions.captureBeyondViewport` | Capture content beyond viewport |
-| `screenshotOptions.encoding` | Output encoding (binary/base64) |
-| `viewport.deviceScaleFactor` | Device pixel ratio |
-
-### Missing from `/pdf`
-
-| Parameter | Description |
-|-----------|-------------|
-| `pdfOptions.displayHeaderFooter` | Show header and footer |
-| `pdfOptions.headerTemplate` | HTML template for header |
-| `pdfOptions.footerTemplate` | HTML template for footer |
-| `pdfOptions.margin` | Page margins (top, bottom, left, right) |
-| `pdfOptions.preferCSSPageSize` | Use CSS-defined page size |
-| `pdfOptions.width` | Custom paper width |
-| `pdfOptions.height` | Custom paper height |
-| `pdfOptions.pageRanges` | Specific pages to print |
-| `pdfOptions.timeout` | PDF rendering timeout |
-| `pdfOptions.omitBackground` | Hide white background |
-| `pdfOptions.tagged` | Generate accessible PDF |
-| `pdfOptions.outline` | Generate bookmarks |
-| `viewport.deviceScaleFactor` | Device pixel ratio |
-
-### Missing from `/json`
-
-| Parameter | Description |
-|-----------|-------------|
-| `response_format` | Full JSON Schema response format (currently `schema` field exists but uses different structure) |
-| `custom_ai` | Custom AI model configuration |
-| `viewport` | Viewport settings |
-
-### Missing from `/snapshot`
-
-| Parameter | Description |
-|-----------|-------------|
-| `screenshotOptions.fullPage` | Full-page screenshot option |
-| `viewport.deviceScaleFactor` | Device pixel ratio |
-
-### Missing from `/links`
-
-| Parameter | Description |
-|-----------|-------------|
-| `visibleLinksOnly` | Filter to visible links only |
-| `excludeExternalLinks` | Exclude external links |
-| `viewport` | Viewport settings |
-
-### Missing from `/content`, `/markdown`
-
-| Parameter | Description |
-|-----------|-------------|
-| `viewport` | Viewport settings (width, height, deviceScaleFactor) |
+The only parameter not exposed as a form field is `screenshotOptions.encoding` (binary vs base64) — the app always uses binary encoding and renders images directly via blob URLs.
