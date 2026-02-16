@@ -10,12 +10,12 @@ export function Header({ showSettings, onToggleSettings }: HeaderProps) {
     <header className="mx-6 mt-3 px-6 py-2.5 glass-panel rounded-2xl shadow-2xl flex items-center justify-between animate-slide-down">
       <div className="flex items-center gap-3">
         {/* Animated gradient orb behind icon */}
-        <div className="relative w-8 h-8 shrink-0">
+        <div className="relative w-10 h-10 shrink-0">
           <div
             className="absolute inset-0 bg-gradient-conic from-accent-primary via-accent-info to-accent-primary blur-lg opacity-60 animate-spin-slow"
             style={{ backgroundImage: 'conic-gradient(from 0deg, var(--color-accent-primary), var(--color-accent-info), var(--color-accent-primary))' }}
           />
-          <img src="/icon.png" alt="" className="relative w-8 h-8 rounded" />
+          <img src="/icon.png" alt="" className="relative w-10 h-10 rounded" />
         </div>
 
         {/* Title with gradient text */}
