@@ -468,9 +468,19 @@ export function ResponsePanel({
                     ? 'border-accent-500 text-surface-900 bg-surface-50'
                     : 'border-transparent text-surface-500 hover:text-surface-700 hover:bg-surface-200'
                 }`}
+                title={entry.url === '__html__' ? 'HTML input' : entry.url}
               >
                 <StatusDot entry={entry} />
-                {truncateUrl(entry.url)}
+                <span className="truncate max-w-50">
+                  {truncateUrl(entry.url)}
+                </span>
+                {entry.state && entry.loading && (
+                  <span className="text-[10px] text-surface-400 ml-1 shrink-0">
+                    {entry.state.status === 'queued' && '(queued)'}
+                    {entry.state.status === 'running' && `(${((Date.now() - entry.state.startTime) / 1000).toFixed(0)}s)`}
+                    {entry.state.status === 'retrying' && `(retry ${entry.state.attempt})`}
+                  </span>
+                )}
               </button>
             ))}
           </div>
