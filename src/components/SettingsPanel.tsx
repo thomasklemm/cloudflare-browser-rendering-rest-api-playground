@@ -123,7 +123,7 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
             <div>
               <p className="text-sm font-medium text-surface-800">Credentials are handled client-side</p>
               <p className="text-xs text-surface-500 mt-1 leading-relaxed">
-                Stored in session storage (cleared when this tab is closed). In production deployments,
+                Stored in local storage so your settings persist between visits. In production deployments,
                 requests are sent to this app&apos;s Cloudflare Worker proxy, which forwards Browser Rendering
                 API calls to Cloudflare.
                 No analytics, no tracking, no data collection. This project is{' '}
