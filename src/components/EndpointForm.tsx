@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown } from 'lucide-react'
+import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown, Info } from 'lucide-react'
 import type { EndpointConfig, FieldConfig, InputMode } from '../types/api'
 import { JsonSchemaBuilder } from './JsonSchemaBuilder'
 import { Toggle } from './Toggle'
@@ -432,6 +432,94 @@ function getMissingRequired(
   return missing
 }
 
+function FeatureToggle({
+  icon: Icon,
+  label,
+  description,
+  detail,
+  checked,
+  onChange,
+}: {
+  icon: typeof Cookie
+  label: string
+  description: string
+  detail: string[]
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="bg-surface-200 border border-surface-300 rounded-lg">
+      <div className="flex items-center gap-2.5 px-3 py-2">
+        <Icon className="w-3.5 h-3.5 text-surface-500 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="text-xs text-surface-800">{label}</span>
+          <p className="text-xs text-surface-500">{description}</p>
+        </div>
+        <Toggle checked={checked} onChange={onChange} />
+      </div>
+      <div className="px-3 pb-1.5">
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-1 text-[11px] text-surface-500 hover:text-surface-600 transition-colors"
+        >
+          <Info className="w-3 h-3" />
+          How it works
+        </button>
+        {expanded && (
+          <ul className="mt-1.5 mb-1 space-y-1 text-[11px] text-surface-500 list-disc list-inside">
+            {detail.map((line, i) => (
+              <li key={i}>{line}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function FeatureToggles({
+  values,
+  onChange,
+}: {
+  values: Record<string, string>
+  onChange: (name: string, value: string) => void
+}) {
+  return (
+    <div className="space-y-2">
+      <FeatureToggle
+        icon={Cookie}
+        label="Dismiss cookie banners"
+        description="Blocks CMP scripts and clicks reject/accept buttons"
+        detail={[
+          'Blocks script URLs from 18+ consent providers (OneTrust, Cookiebot, Quantcast, Didomi, Usercentrics, and more) via rejectRequestPattern',
+          'Injects a cleanup script that tries CMP-specific reject buttons first, then generic reject selectors, then text-based scanning for reject/decline keywords',
+          'Falls back to accepting cookies if no reject option is found, to clear the banner',
+          'As a last resort, removes banner DOM elements and overlay backdrops directly',
+        ]}
+        checked={values._dismissCookies === 'true'}
+        onChange={(checked) => onChange('_dismissCookies', checked ? 'true' : 'false')}
+      />
+      <FeatureToggle
+        icon={ImageDown}
+        label="Load all images"
+        description="Forces lazy-loaded images to load without scrolling"
+        detail={[
+          'Removes loading="lazy" attributes so the browser fetches images eagerly',
+          'Swaps data-src, data-lazy-src, and data-original attributes to src for common lazy-load libraries',
+          'Copies data-srcset to srcset on img and source elements for responsive images',
+          'Applies data-bg and data-background-image to inline background styles',
+          'Waits for all images to finish loading, then signals completion via a sentinel element',
+        ]}
+        checked={values._loadAllImages === 'true'}
+        onChange={(checked) => onChange('_loadAllImages', checked ? 'true' : 'false')}
+      />
+    </div>
+  )
+}
+
 export function EndpointForm({
   endpoint,
   values,
@@ -570,30 +658,7 @@ export function EndpointForm({
 
       {/* Script injection toggles */}
       {endpoint.hasUrlHtmlInput && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2.5 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg">
-            <Cookie className="w-3.5 h-3.5 text-surface-500 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-surface-800">Dismiss cookie banners</span>
-              <p className="text-xs text-surface-500">Blocks CMP scripts and clicks reject/accept buttons</p>
-            </div>
-            <Toggle
-              checked={values._dismissCookies === 'true'}
-              onChange={(checked) => onChange('_dismissCookies', checked ? 'true' : 'false')}
-            />
-          </div>
-          <div className="flex items-center gap-2.5 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg">
-            <ImageDown className="w-3.5 h-3.5 text-surface-500 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-surface-800">Load all images</span>
-              <p className="text-xs text-surface-500">Swaps lazy-load attributes to force all images to load</p>
-            </div>
-            <Toggle
-              checked={values._loadAllImages === 'true'}
-              onChange={(checked) => onChange('_loadAllImages', checked ? 'true' : 'false')}
-            />
-          </div>
-        </div>
+        <FeatureToggles values={values} onChange={onChange} />
       )}
 
       {/* Quick-start examples for /json endpoint */}

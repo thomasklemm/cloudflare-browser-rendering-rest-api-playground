@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Eye, EyeOff, ExternalLink, X } from 'lucide-react'
+import { Eye, EyeOff, ExternalLink, X, Lock } from 'lucide-react'
 import type { Settings } from '../types/api'
 
 interface SettingsPanelProps {
@@ -115,16 +115,19 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
           </div>
         </div>
 
-        {/* Additional help link */}
-        <div className="mt-6 pt-6 border-t border-white/10">
+        <div className="mt-6 pt-6 border-t border-white/10 flex items-start justify-between gap-4">
+          <div className="flex items-center gap-2 text-xs text-surface-500">
+            <Lock className="w-3.5 h-3.5 shrink-0" />
+            <span>Credentials are stored in your browser's local storage and are never sent to any server other than Cloudflare's API.</span>
+          </div>
           <a
             href="https://developers.cloudflare.com/fundamentals/api/get-started/create-token/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-surface-600 hover:text-accent-primary inline-flex items-center gap-1 transition-colors"
+            className="text-xs text-surface-500 hover:text-surface-700 inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0"
           >
-            How to create API tokens →
-            <ExternalLink className="w-3.5 h-3.5" />
+            Token docs
+            <ExternalLink className="w-3 h-3" />
           </a>
         </div>
       </div>
