@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown, Info } from 'lucide-react'
+import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown } from 'lucide-react'
 import type { EndpointConfig, FieldConfig, InputMode } from '../types/api'
 import { JsonSchemaBuilder } from './JsonSchemaBuilder'
 import { Toggle } from './Toggle'
@@ -473,17 +473,17 @@ function FeatureToggle({
         </div>
         <Toggle checked={checked} onChange={onChange} />
       </div>
-      <div className="px-3 pb-1.5">
+      <div className="px-3 pb-2">
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 text-[11px] text-surface-500 hover:text-surface-600 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-surface-600 hover:text-surface-800 hover:bg-surface-300/50 px-2 py-1 rounded transition-all -ml-2"
         >
-          <Info className="w-3 h-3" />
-          How it works
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          <span className="font-medium">How it works</span>
         </button>
         {expanded && (
-          <ul className="mt-1.5 mb-1 space-y-1 text-[11px] text-surface-500 list-disc list-inside">
+          <ul className="mt-2 mb-1 ml-1 space-y-1 text-[11px] text-surface-500 list-disc list-inside">
             {detail.map((line, i) => (
               <li key={i}>{line}</li>
             ))}
