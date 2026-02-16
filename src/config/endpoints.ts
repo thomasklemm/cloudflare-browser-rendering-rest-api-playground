@@ -437,6 +437,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'text',
         placeholder: '1cm',
         section: 'PDF Margins',
+        hint: 'Right margin with units (optional)',
       },
       {
         name: 'pdfOptions.displayHeaderFooter',
@@ -460,6 +461,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'textarea',
         placeholder: '<div style="font-size:10px; text-align:center; width:100%;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>',
         section: 'PDF Header/Footer',
+        hint: 'HTML with classes: pageNumber, totalPages, title, date, url',
       },
       {
         name: 'pdfOptions.timeout',
@@ -467,6 +469,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'number',
         placeholder: '30000',
         section: 'PDF Options',
+        hint: 'Maximum time to wait for PDF generation (default: 30000ms)',
       },
       // Shared
       ...sharedFields,

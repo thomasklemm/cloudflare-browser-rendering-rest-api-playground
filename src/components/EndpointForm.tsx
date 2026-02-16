@@ -582,7 +582,7 @@ export function EndpointForm({
         : `Send ${urlCount} Requests`
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <p className="text-xs text-surface-500">{endpoint.description}</p>
 
       {/* URL / HTML input toggle */}
@@ -725,8 +725,8 @@ export function EndpointForm({
             onChange={(v) => onChange(field.name, v)}
           />
         ) : (
-          <div key={field.name}>
-            <label className="block text-xs text-surface-600 mb-1">
+          <div key={field.name} className="pb-4 border-b border-surface-200 last:border-b-0 last:pb-0">
+            <label className="block text-xs font-medium text-surface-600 mb-1.5">
               {field.label}
               {field.required && <span className="text-accent-500 ml-1">*</span>}
             </label>
@@ -737,9 +737,9 @@ export function EndpointForm({
               error={showError(field)}
             />
             {showError(field) ? (
-              <p className="text-xs text-red-400 mt-1">{field.label} is required</p>
+              <p className="text-xs text-red-400 mt-1.5">{field.label} is required</p>
             ) : field.hint ? (
-              <p className="text-xs text-surface-500 mt-1">{field.hint}</p>
+              <p className="text-xs text-surface-500 mt-1.5 leading-relaxed">{field.hint}</p>
             ) : null}
           </div>
         ),
@@ -760,10 +760,10 @@ export function EndpointForm({
             {name}
           </button>
           {expandedSections.has(name) && (
-            <div className="px-3 pt-2 pb-3 space-y-3">
-              {fields.map((field) => (
-                <div key={field.name}>
-                  <label className="block text-xs text-surface-600 mb-1">
+            <div className="px-3 pt-2 pb-3 space-y-4">
+              {fields.map((field, idx) => (
+                <div key={field.name} className={idx < fields.length - 1 ? 'pb-4 border-b border-surface-200' : ''}>
+                  <label className="block text-xs font-medium text-surface-600 mb-1.5">
                     {field.label}
                     {field.required && <span className="text-accent-500 ml-1">*</span>}
                   </label>
@@ -774,9 +774,9 @@ export function EndpointForm({
                     error={showError(field)}
                   />
                   {showError(field) ? (
-                    <p className="text-xs text-red-400 mt-1">{field.label} is required</p>
+                    <p className="text-xs text-red-400 mt-1.5">{field.label} is required</p>
                   ) : field.hint ? (
-                    <p className="text-xs text-surface-500 mt-1">{field.hint}</p>
+                    <p className="text-xs text-surface-500 mt-1.5 leading-relaxed">{field.hint}</p>
                   ) : null}
                 </div>
               ))}
