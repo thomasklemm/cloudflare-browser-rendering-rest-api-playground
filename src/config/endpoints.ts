@@ -8,7 +8,7 @@ const waitForSelectorField: FieldConfig = {
   type: 'text',
   placeholder: '#content',
   section: 'Navigation',
-  hint: 'CSS selector to wait for before completing',
+  hint: 'CSS selector to wait for before completing (optional)',
 }
 
 const rewriteUrlField: FieldConfig = {
@@ -17,6 +17,7 @@ const rewriteUrlField: FieldConfig = {
   type: 'text',
   placeholder: 'https://example.com/rewritten',
   section: 'Navigation',
+  hint: 'Rewrite the target URL before navigation (optional)',
 }
 
 const gotoOptionsFields: FieldConfig[] = [
@@ -31,7 +32,7 @@ const gotoOptionsFields: FieldConfig[] = [
       { label: 'networkidle2', value: 'networkidle2' },
     ],
     section: 'Navigation',
-    hint: 'When to consider navigation complete',
+    hint: 'When to consider navigation complete (default: load)',
   },
   {
     name: 'gotoOptions.timeout',
@@ -39,6 +40,7 @@ const gotoOptionsFields: FieldConfig[] = [
     type: 'number',
     placeholder: '30000',
     section: 'Navigation',
+    hint: 'Maximum wait time for page navigation (default: 30000ms)',
   },
 ]
 
@@ -47,15 +49,17 @@ const viewportFields: FieldConfig[] = [
     name: 'viewport.width',
     label: 'Width',
     type: 'number',
-    placeholder: '1280',
+    placeholder: '1920',
     section: 'Viewport',
+    hint: 'Viewport width in pixels (default: 1920)',
   },
   {
     name: 'viewport.height',
     label: 'Height',
     type: 'number',
-    placeholder: '720',
+    placeholder: '1080',
     section: 'Viewport',
+    hint: 'Viewport height in pixels (default: 1080)',
   },
   {
     name: 'viewport.deviceScaleFactor',
@@ -63,7 +67,7 @@ const viewportFields: FieldConfig[] = [
     type: 'number',
     placeholder: '1',
     section: 'Viewport',
-    hint: 'Device pixel ratio (e.g. 2 for Retina)',
+    hint: 'Device pixel ratio for high-DPI (default: 1, Retina: 2)',
   },
 ]
 
@@ -74,6 +78,7 @@ const authFields: FieldConfig[] = [
     type: 'text',
     placeholder: 'user',
     section: 'Authentication',
+    hint: 'HTTP Basic Authentication username (optional)',
   },
   {
     name: 'authenticate.password',
@@ -81,6 +86,7 @@ const authFields: FieldConfig[] = [
     type: 'text',
     placeholder: 'pass',
     section: 'Authentication',
+    hint: 'HTTP Basic Authentication password (optional)',
   },
   {
     name: 'cookies',
@@ -88,7 +94,7 @@ const authFields: FieldConfig[] = [
     type: 'json',
     placeholder: '[{"name": "session", "value": "abc", "domain": ".example.com"}]',
     section: 'Authentication',
-    hint: 'Array of cookie objects (name, value, domain, path, secure, httpOnly, sameSite, expires)',
+    hint: 'Array of cookies to set before page load (optional)',
   },
 ]
 
