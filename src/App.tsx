@@ -102,14 +102,14 @@ export default function App() {
   const activeEntry = entries[activeIndex] || null
 
   return (
-    <div className="h-screen flex flex-col bg-surface-50">
+    <div className="h-screen flex flex-col">
       <Header
         showSettings={showSettings}
         onToggleSettings={() => setShowSettings((s) => !s)}
       />
 
       {showSettings && (
-        <SettingsPanel settings={settings} onChange={setSettings} />
+        <SettingsPanel settings={settings} onChange={setSettings} onClose={() => setShowSettings(false)} />
       )}
 
       <EndpointTabs
@@ -118,9 +118,9 @@ export default function App() {
         onSelect={handleEndpointChange}
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 px-6 pb-6 gap-6">
         {/* Left: Form + Curl */}
-        <div className="lg:w-[420px] shrink-0 border-r border-surface-300 overflow-y-auto p-6 space-y-6">
+        <div className="lg:w-[400px] shrink-0 flex flex-col gap-6 overflow-y-auto glass-panel rounded-xl shadow-2xl p-6 animate-slide-left">
           <EndpointForm
             endpoint={endpoint}
             values={currentValues}
@@ -139,7 +139,7 @@ export default function App() {
         </div>
 
         {/* Right: Response */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 rounded-xl overflow-hidden shadow-2xl animate-fade-scale">
           <ResponsePanel
             entries={entries}
             activeIndex={activeIndex}
