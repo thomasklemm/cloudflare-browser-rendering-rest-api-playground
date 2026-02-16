@@ -4,6 +4,8 @@ An interactive web playground for exploring all 8 [Cloudflare Browser Rendering 
 
 > **Note:** This is an independent, community-driven project and is not officially affiliated with, maintained by, or endorsed by Cloudflare, Inc. We're just enthusiastic users who wanted to make the Browser Rendering API more accessible to the developer community.
 
+**[Live Demo](https://cloudflare-browser-rendering-playground.tjk-ventures-o.workers.dev)** — try it in your browser (bring your own Cloudflare API credentials)
+
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/React-19.2-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)
