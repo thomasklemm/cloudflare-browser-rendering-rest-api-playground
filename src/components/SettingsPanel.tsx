@@ -67,7 +67,7 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
                 )}
               </div>
               <div className="text-xs text-surface-600 space-y-1">
-                <div>• 6 requests/minute (1 every 10s)</div>
+                <div>• 3 new browsers/min (1 every 20s)</div>
                 <div>• 3 concurrent browsers</div>
                 <div>• 10 min browser time/day</div>
               </div>
@@ -88,7 +88,7 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
                 )}
               </div>
               <div className="text-xs text-surface-600 space-y-1">
-                <div>• 180 requests/minute (3/sec)</div>
+                <div>• 30 new browsers/min (1 every 2s)</div>
                 <div>• 30 concurrent browsers</div>
                 <div>• Unlimited browser time</div>
               </div>

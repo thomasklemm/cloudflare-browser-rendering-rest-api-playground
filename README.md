@@ -119,19 +119,23 @@ Cloudflare Browser Rendering enforces different rate limits based on your Worker
 
 - **6 requests per minute** (1 every 10 seconds)
 - **3 concurrent browsers**
-- **3 new browsers per minute**
+- **3 new browsers per minute** (1 every 20 seconds) ← **Limiting factor!**
 - **10 minutes of browser time per day**
 
-**Batch processing on Free:** For 6 URLs, expect ~50 seconds total (sequential processing, 10s between requests).
+**Batch processing on Free:** For 6 URLs, expect ~100 seconds total (sequential processing, 20s between requests).
+
+Since each REST API request creates a new browser instance, the "3 new browsers/min" limit (20s spacing) is tighter than the "6 requests/min" limit (10s spacing).
 
 ### Workers Paid Plan
 
 - **180 requests per minute** (3 per second)
 - **30 concurrent browsers**
-- **30 new browsers per minute**
+- **30 new browsers per minute** (1 every 2 seconds) ← **Limiting factor!**
 - **Unlimited browser time**
 
-**Batch processing on Paid:** For 6 URLs, expect ~1.8 seconds total (10 concurrent, 350ms spacing).
+**Batch processing on Paid:** For 6 URLs, expect ~10 seconds total (10 concurrent, but 2s spacing required).
+
+Since each REST API request creates a new browser instance, the "30 new browsers/min" limit (2s spacing) is tighter than the "180 requests/min" limit (333ms spacing).
 
 ### Important Notes
 

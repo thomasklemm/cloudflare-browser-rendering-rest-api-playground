@@ -13,21 +13,30 @@ const MAX_RETRIES = 3
 
 // Plan-specific rate limit configurations
 // Official limits: https://developers.cloudflare.com/browser-rendering/limits/
-// Free: 6 req/min (1 every 10s), 3 concurrent, 3 new browsers/min
-// Paid: 180 req/min (3/sec), 30 concurrent, 30 new browsers/min
+//
+// CRITICAL: Two separate limits apply to REST API:
+//   1. Requests per minute (API calls)
+//   2. New browser instances per minute (each API call = new browser)
+//
+// Free: 6 req/min (1 every 10s) AND 3 new browsers/min (1 every 20s)
+// Paid: 180 req/min (3/sec) AND 30 new browsers/min (1 every 2s)
+//
+// Since each REST API request creates a new browser instance, the tighter
+// "new browser instances" limit is what we must respect!
+//
 // Rate limits use FIXED per-second fill rate - must spread evenly, no burst
 const PLAN_LIMITS = {
   free: {
-    maxConcurrent: 1,          // Free: 1 req every 10s = serialize all requests
-    maxRequestsPerMin: 5,      // Free allows 6/min, use 5 to allow retries
-    minRequestSpacingMs: 10000, // 10 seconds between requests (1 every 10s) - matches official limit
-    initialRetryMs: 10000,     // 10s initial retry delay
+    maxConcurrent: 1,           // Free: sequential processing only
+    maxRequestsPerMin: 3,       // 3 new browsers/min (tighter than 6 req/min)
+    minRequestSpacingMs: 20000, // 20 seconds (3 new browsers/min = 1 every 20s)
+    initialRetryMs: 20000,      // 20s initial retry delay
   },
   paid: {
-    maxConcurrent: 10,         // Paid allows 30 concurrent, use 10 for reasonable batch size
-    maxRequestsPerMin: 150,    // Paid allows 180/min, use 150 to be safe
-    minRequestSpacingMs: 350,  // 350ms between requests (2.86/sec, under 3/sec limit with safety margin)
-    initialRetryMs: 5000,      // 5s initial retry delay
+    maxConcurrent: 10,          // Paid allows 30 concurrent, use 10 for reasonable batch size
+    maxRequestsPerMin: 30,      // 30 new browsers/min (tighter than 180 req/min)
+    minRequestSpacingMs: 2000,  // 2 seconds (30 new browsers/min = 1 every 2s)
+    initialRetryMs: 5000,       // 5s initial retry delay
   },
 } as const
 
