@@ -21,7 +21,6 @@ interface ResponsePanelProps {
 function SnapshotViewer({ screenshot, html }: { screenshot: string | null; html: string | null }) {
   const [tab, setTab] = useState<'screenshot' | 'html'>(screenshot ? 'screenshot' : 'html')
 
-  const hasBoth = screenshot && html
   const tabCls = (active: boolean) =>
     `px-3 py-1.5 text-xs border-b-2 transition-colors ${
       active
@@ -31,15 +30,19 @@ function SnapshotViewer({ screenshot, html }: { screenshot: string | null; html:
 
   return (
     <div className="h-full flex flex-col">
-      {hasBoth && (
+      {(screenshot || html) && (
         <div className="flex items-center border-b border-surface-300 bg-surface-100 shrink-0">
-          <button onClick={() => setTab('screenshot')} className={tabCls(tab === 'screenshot')}>
-            Screenshot
-          </button>
-          <button onClick={() => setTab('html')} className={tabCls(tab === 'html')}>
-            HTML
-          </button>
-          {tab === 'screenshot' && (
+          {screenshot && (
+            <button onClick={() => setTab('screenshot')} className={tabCls(tab === 'screenshot')}>
+              Screenshot
+            </button>
+          )}
+          {html && (
+            <button onClick={() => setTab('html')} className={tabCls(tab === 'html')}>
+              HTML
+            </button>
+          )}
+          {tab === 'screenshot' && screenshot && (
             <a
               href={`data:image/png;base64,${screenshot}`}
               download={`snapshot-screenshot-${timestamp()}.png`}
@@ -48,6 +51,15 @@ function SnapshotViewer({ screenshot, html }: { screenshot: string | null; html:
               <Download className="w-3 h-3" />
               Save image
             </a>
+          )}
+          {tab === 'html' && html && (
+            <button
+              onClick={() => downloadText(html, `snapshot-html-${timestamp()}.html`, 'text/html')}
+              className="ml-auto flex items-center gap-1 px-3 text-xs text-surface-500 hover:text-surface-700 transition-colors"
+            >
+              <Download className="w-3 h-3" />
+              Save HTML
+            </button>
           )}
         </div>
       )}
@@ -297,11 +309,29 @@ function downloadText(content: string, filename: string, mime = 'text/plain;char
   URL.revokeObjectURL(url)
 }
 
-/** Extract the content to zip/download for a given response, unwrapping CF envelopes for html/markdown. */
-function extractContent(data: string, responseType: ResponseType): string {
+function base64ToBlob(base64: string, contentType = 'image/png'): Blob {
+  const byteCharacters = atob(base64)
+  const byteArray = new Uint8Array(byteCharacters.length)
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteArray[i] = byteCharacters.charCodeAt(i)
+  }
+  return new Blob([byteArray], { type: contentType })
+}
+
+/** Extract the content to zip/download for a given response, unwrapping CF envelopes for html/markdown/snapshot. */
+function extractContent(
+  data: string,
+  responseType: ResponseType,
+): string | { screenshot: string | null; html: string | null; raw: string } {
   if (responseType === 'html' || responseType === 'markdown') {
     const unwrapped = unwrapCfEnvelope(data)
     if (unwrapped) return unwrapped.result
+  }
+  if (responseType === 'snapshot') {
+    const unwrapped = unwrapSnapshotEnvelope(data)
+    if (unwrapped) {
+      return { screenshot: unwrapped.screenshot, html: unwrapped.html, raw: data }
+    }
   }
   return data
 }
@@ -318,25 +348,41 @@ async function downloadAllAsZip(
   // Deduplicate filenames
   const usedNames = new Set<string>()
 
+  const dedupName = (base: string, extension: string): string => {
+    let name = `${base}.${extension}`
+    if (usedNames.has(name)) {
+      let i = 2
+      while (usedNames.has(`${base}-${i}.${extension}`)) i++
+      name = `${base}-${i}.${extension}`
+    }
+    usedNames.add(name)
+    return name
+  }
+
   for (const entry of entries) {
     if (!entry.response || entry.response.status >= 400 || !entry.response.data) continue
 
-    let name = `${urlSlug(entry.url)}-${label}.${ext}`
-    if (usedNames.has(name)) {
-      let i = 2
-      while (usedNames.has(`${urlSlug(entry.url)}-${label}-${i}.${ext}`)) i++
-      name = `${urlSlug(entry.url)}-${label}-${i}.${ext}`
-    }
-    usedNames.add(name)
+    const slug = urlSlug(entry.url)
 
     if (binary) {
-      // Fetch the blob from the blob URL
       const res = await fetch(entry.response.data as string)
       const blob = await res.blob()
-      zip.file(name, blob)
+      zip.file(dedupName(`${slug}-${label}`, ext), blob)
     } else {
       const content = extractContent(entry.response.data as string, responseType)
-      zip.file(name, content)
+
+      if (typeof content === 'object' && 'raw' in content) {
+        // Snapshot: add up to 3 files
+        if (content.screenshot) {
+          zip.file(dedupName(`${slug}-screenshot`, 'png'), base64ToBlob(content.screenshot))
+        }
+        if (content.html) {
+          zip.file(dedupName(`${slug}-content`, 'html'), content.html)
+        }
+        zip.file(dedupName(`${slug}-envelope`, 'json'), content.raw)
+      } else {
+        zip.file(dedupName(`${slug}-${label}`, ext), content as string)
+      }
     }
   }
 
@@ -448,7 +494,7 @@ export function ResponsePanel({
                 className={zipBtn}
               >
                 <FolderDown className="w-3.5 h-3.5" />
-                Download All ({completedCount})
+                Save All ({completedCount})
               </button>
             )
           })()}
@@ -495,7 +541,7 @@ export function ResponsePanel({
                           className="mt-2 flex items-center gap-1 text-xs text-accent-400 hover:text-accent-500 transition-colors"
                         >
                           <Download className="w-3 h-3" />
-                          Download JSON
+                          Save JSON
                         </button>
                       </div>
                     </div>
@@ -503,7 +549,7 @@ export function ResponsePanel({
                 ) : (
                   <span className="text-xs text-surface-500">{response.contentType}</span>
                 )}
-                {response.status < 400 && response.data && (() => {
+                {response.status < 400 && response.data && responseType !== 'snapshot' && (() => {
                   if (binary) {
                     return (
                       <a
@@ -512,7 +558,7 @@ export function ResponsePanel({
                         className={`ml-auto ${btnCls} rounded-lg`}
                       >
                         <Download className="w-3.5 h-3.5" />
-                        Download
+                        Save
                       </a>
                     )
                   }
@@ -526,7 +572,7 @@ export function ResponsePanel({
                       className={`ml-auto ${btnCls} rounded-lg`}
                     >
                       <Download className="w-3.5 h-3.5" />
-                      Download
+                      Save
                     </button>
                   )
                 })()}
