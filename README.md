@@ -1,6 +1,12 @@
-# Cloudflare Browser Rendering REST API Playground
+<p align="center">
+  <img src="public/favicon.svg" alt="Render Prism" width="128" height="128" />
+</p>
 
-An interactive web playground for exploring all 8 [Cloudflare Browser Rendering REST API](https://developers.cloudflare.com/browser-rendering/rest-api/) endpoints. Built by fans of Cloudflare's Browser Rendering API to make it easier for developers to test, learn, and build with this powerful tool.
+<h1 align="center">Cloudflare Browser Rendering REST API Playground</h1>
+
+<p align="center">
+  An interactive web playground for exploring all 8 <a href="https://developers.cloudflare.com/browser-rendering/rest-api/">Cloudflare Browser Rendering REST API</a> endpoints. Built by fans of Cloudflare's Browser Rendering API to make it easier for developers to test, learn, and build with this powerful tool.
+</p>
 
 > **Note:** This is an independent, community-driven project and is not officially affiliated with, maintained by, or endorsed by Cloudflare, Inc. We're just enthusiastic users who wanted to make the Browser Rendering API more accessible to the developer community.
 

@@ -1,25 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <!-- Background gradient -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#f6821f;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#ff9f5a;stop-opacity:1" />
+    <linearGradient id="prism" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f6821f"/>
+      <stop offset="100%" stop-color="#ff9f5a"/>
     </linearGradient>
   </defs>
 
-  <!-- Browser window frame -->
-  <rect x="4" y="6" width="24" height="20" rx="2" fill="url(#grad)" opacity="0.9"/>
+  <!-- Dark rounded background -->
+  <rect width="512" height="512" rx="96" fill="#0a0a0f"/>
 
-  <!-- Browser chrome bar -->
-  <rect x="4" y="6" width="24" height="4" rx="2" fill="#1a1a25"/>
+  <!-- Subtle orange edge glow -->
+  <rect x="4" y="4" width="504" height="504" rx="93" fill="none" stroke="#f6821f" stroke-width="2" opacity="0.12"/>
 
-  <!-- Chrome dots -->
-  <circle cx="7" cy="8" r="0.8" fill="#f6821f"/>
-  <circle cx="9.5" cy="8" r="0.8" fill="#f6821f"/>
-  <circle cx="12" cy="8" r="0.8" fill="#f6821f"/>
+  <!-- Input beam entering the prism -->
+  <line x1="36" y1="256" x2="128" y2="256" stroke="#f6821f" stroke-width="14" stroke-linecap="round" opacity="0.35"/>
 
-  <!-- Rendering layers (stacked rectangles) -->
-  <rect x="8" y="13" width="16" height="2" rx="0.5" fill="#0a0a0f" opacity="0.7"/>
-  <rect x="10" y="16" width="12" height="2" rx="0.5" fill="#0a0a0f" opacity="0.5"/>
-  <rect x="12" y="19" width="8" height="2" rx="0.5" fill="#0a0a0f" opacity="0.3"/>
+  <!-- The prism: bold forward-pointing triangle -->
+  <polygon points="128,96 392,256 128,416" fill="url(#prism)"/>
+
+  <!-- Output beams fanning out — URL splits into multiple rendered formats -->
+  <line x1="392" y1="256" x2="472" y2="116" stroke="#ff9f5a" stroke-width="14" stroke-linecap="round"/>
+  <line x1="392" y1="256" x2="480" y2="256" stroke="#f6821f" stroke-width="14" stroke-linecap="round"/>
+  <line x1="392" y1="256" x2="472" y2="396" stroke="#e06b10" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- Beam endpoint dots -->
+  <circle cx="472" cy="116" r="12" fill="#ff9f5a"/>
+  <circle cx="480" cy="256" r="12" fill="#f6821f"/>
+  <circle cx="472" cy="396" r="12" fill="#e06b10"/>
 </svg>
