@@ -187,26 +187,14 @@ const sharedFields: FieldConfig[] = [
 ]
 
 export const endpoints: EndpointConfig[] = [
-  {
-    id: 'content',
-    label: 'Content',
-    shortDesc: 'Rendered HTML',
-    method: 'POST',
-    path: '/content',
-    description: 'Get the rendered HTML content of a page',
-    responseType: 'html',
-    hasUrlHtmlInput: true,
-    fields: [
-      ...sharedFields,
-    ],
-  },
+  // Reordered by importance and logical use case flow
   {
     id: 'screenshot',
     label: 'Screenshot',
-    shortDesc: 'Page capture',
+    shortDesc: 'Visual capture',
     method: 'POST',
     path: '/screenshot',
-    description: 'Take a screenshot of a page',
+    description: 'Capture high-quality screenshots (PNG, JPEG, WebP) - full page or specific elements',
     responseType: 'image',
     contentType: 'image/png',
     hasUrlHtmlInput: true,
@@ -296,10 +284,10 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'pdf',
     label: 'PDF',
-    shortDesc: 'Print to PDF',
+    shortDesc: 'Document export',
     method: 'POST',
     path: '/pdf',
-    description: 'Generate a PDF of a page',
+    description: 'Generate print-ready PDFs with custom page sizes, margins, and headers/footers',
     responseType: 'pdf',
     contentType: 'application/pdf',
     hasUrlHtmlInput: true,
@@ -466,7 +454,7 @@ export const endpoints: EndpointConfig[] = [
     shortDesc: 'AI extraction',
     method: 'POST',
     path: '/json',
-    description: 'Extract structured JSON from a page using AI',
+    description: 'Extract structured JSON from a page using AI - highlight the power of AI-powered data extraction',
     responseType: 'json',
     hasUrlHtmlInput: true,
     fields: [
@@ -499,12 +487,25 @@ export const endpoints: EndpointConfig[] = [
     ],
   },
   {
+    id: 'content',
+    label: 'Content',
+    shortDesc: 'Rendered HTML',
+    method: 'POST',
+    path: '/content',
+    description: 'Get the fully rendered HTML content after JavaScript execution',
+    responseType: 'html',
+    hasUrlHtmlInput: true,
+    fields: [
+      ...sharedFields,
+    ],
+  },
+  {
     id: 'markdown',
     label: 'Markdown',
-    shortDesc: 'Text conversion',
+    shortDesc: 'Clean text',
     method: 'POST',
     path: '/markdown',
-    description: 'Convert a page to Markdown',
+    description: 'Convert web pages to clean Markdown - perfect for LLM processing and documentation',
     responseType: 'markdown',
     hasUrlHtmlInput: true,
     fields: [
@@ -514,10 +515,10 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'snapshot',
     label: 'Snapshot',
-    shortDesc: 'HTML + image',
+    shortDesc: 'Combined output',
     method: 'POST',
     path: '/snapshot',
-    description: 'Get HTML content and a base64 screenshot',
+    description: 'Get both rendered HTML and a base64-encoded screenshot in one request',
     responseType: 'snapshot',
     hasUrlHtmlInput: true,
     fields: [
@@ -536,10 +537,10 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'scrape',
     label: 'Scrape',
-    shortDesc: 'CSS selectors',
+    shortDesc: 'Targeted extraction',
     method: 'POST',
     path: '/scrape',
-    description: 'Scrape structured data from a page using CSS selectors',
+    description: 'Extract specific elements using CSS selectors - precise, code-based data scraping',
     responseType: 'json',
     hasUrlHtmlInput: true,
     fields: [
@@ -559,10 +560,10 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'links',
     label: 'Links',
-    shortDesc: 'Link discovery',
+    shortDesc: 'URL extraction',
     method: 'POST',
     path: '/links',
-    description: 'Extract all links from a page',
+    description: 'Extract all links from a page - useful for sitemaps, crawling, and link analysis',
     responseType: 'json',
     hasUrlHtmlInput: true,
     fields: [
