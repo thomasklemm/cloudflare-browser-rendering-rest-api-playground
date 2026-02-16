@@ -1,4 +1,4 @@
-import { Settings, Globe, ExternalLink, Github } from 'lucide-react'
+import { Settings, Globe, Github, BookOpen, ExternalLink } from 'lucide-react'
 
 interface HeaderProps {
   showSettings: boolean
@@ -38,16 +38,16 @@ export function Header({ showSettings, onToggleSettings }: HeaderProps) {
         </div>
       </div>
 
-      {/* Right side: Docs link + GitHub + Settings */}
+      {/* Right side: Docs + GitHub + Settings */}
       <div className="flex items-center gap-2">
         <a
           href="https://developers.cloudflare.com/browser-rendering/rest-api/"
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm text-surface-700 hover:text-accent-primary transition-colors rounded-lg hover:bg-glass-control"
+          className="p-2 rounded-lg text-surface-600 hover:text-surface-800 hover:bg-glass-control transition-all"
+          title="API Documentation"
         >
-          View API Docs
-          <ExternalLink className="w-3.5 h-3.5" />
+          <BookOpen className="w-5 h-5" />
         </a>
 
         <a
@@ -63,7 +63,7 @@ export function Header({ showSettings, onToggleSettings }: HeaderProps) {
         <button
           type="button"
           onClick={onToggleSettings}
-          className={`p-2 rounded-lg transition-all ${
+          className={`p-2 rounded-lg transition-all cursor-pointer ${
             showSettings
               ? 'bg-accent-primary/20 text-accent-primary shadow-[0_0_15px_var(--color-accent-primary-glow)]'
               : 'text-surface-600 hover:text-surface-800 hover:bg-glass-control'
