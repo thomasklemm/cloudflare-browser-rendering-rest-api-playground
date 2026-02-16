@@ -3,12 +3,17 @@ import type { EndpointConfig, Settings, ApiResponse, BatchResponseEntry, Request
 import { buildFetchOptions } from '../lib/buildRequest'
 
 // Concurrency and pacing settings
-// Cloudflare Browser Rendering REST API limits:
-// - Workers Free: 6 requests/minute, 3 concurrent browsers
-// - Paid: 10 concurrent browsers, higher rate limits
-const MAX_CONCURRENT = 1  // Serialize requests to respect rate limits
+// Cloudflare Browser Rendering REST API limits (as of Jan 2025):
+// Free Plan: 6 req/min (1 every 10s), 3 concurrent, 3 new browsers/min
+// Paid Plan: 180 req/min (3/sec), 30 concurrent, 30 new browsers/min
+//
+// IMPORTANT: Rate limits use fixed per-second fill rate, NOT burst allowance.
+// Must spread requests evenly. For paid: max 3/second = 1 every 333ms.
+//
+// Settings below are tuned for FREE PLAN (most restrictive):
+const MAX_CONCURRENT = 2  // Free allows 3 concurrent, use 2 to be safe
 const MAX_RETRIES = 3
-const INITIAL_RETRY_MS = 5000  // Longer initial retry delay to respect rate limits
+const INITIAL_RETRY_MS = 10000  // 10s initial delay (respects free plan 10s/request rate)
 
 function wait(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -20,12 +25,12 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
   })
 }
 
-// Global rate limiter: tracks recent request timestamps across all endpoint tabs
-// Ensures we respect the 6 requests/minute API limit globally
+// Global rate limiter tuned for FREE PLAN (6 requests/minute = 1 every 10 seconds)
+// For paid plan users: you can increase these values or disable the rate limiter
 const globalRequestTimestamps: number[] = []
-const RATE_LIMIT_WINDOW_MS = 60000  // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 5    // Conservative: 5 requests per minute (allows safety margin)
-const MIN_REQUEST_SPACING_MS = 2000  // Minimum 2 seconds between any two requests
+const RATE_LIMIT_WINDOW_MS = 60000      // 1 minute window
+const RATE_LIMIT_MAX_REQUESTS = 5       // Conservative: 5/min for free (allows 1 retry)
+const MIN_REQUEST_SPACING_MS = 10000    // 10 seconds between requests (free plan rate)
 
 async function waitForRateLimit(signal?: AbortSignal): Promise<void> {
   const now = Date.now()
@@ -177,10 +182,11 @@ export function useBatchApiRequest() {
                 : INITIAL_RETRY_MS * Math.pow(2, attempt)
 
               // Set retrying state
+              const retryAt = Date.now() + delayMs
               setAllEntries((prev) => ({
                 ...prev,
                 [key]: (prev[key] || []).map((e, i) =>
-                  i === index ? { ...e, state: { status: 'retrying', attempt: attempt + 1, nextRetryIn: delayMs } as RequestState } : e,
+                  i === index ? { ...e, state: { status: 'retrying', attempt: attempt + 1, nextRetryIn: delayMs, retryAt } as RequestState } : e,
                 ),
               }))
 
@@ -244,10 +250,11 @@ export function useBatchApiRequest() {
               const delayMs = INITIAL_RETRY_MS * Math.pow(2, attempt)
 
               // Set retrying state
+              const retryAt = Date.now() + delayMs
               setAllEntries((prev) => ({
                 ...prev,
                 [key]: (prev[key] || []).map((e, i) =>
-                  i === index ? { ...e, state: { status: 'retrying', attempt: attempt + 1, nextRetryIn: delayMs } as RequestState } : e,
+                  i === index ? { ...e, state: { status: 'retrying', attempt: attempt + 1, nextRetryIn: delayMs, retryAt } as RequestState } : e,
                 ),
               }))
 

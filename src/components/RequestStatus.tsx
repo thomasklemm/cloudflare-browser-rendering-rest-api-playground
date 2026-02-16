@@ -26,7 +26,7 @@ export function RequestStatus({ state }: RequestStatusProps) {
   useEffect(() => {
     if (state.status !== 'retrying') return
 
-    const targetTime = Date.now() + state.nextRetryIn
+    const targetTime = state.retryAt
     const interval = setInterval(() => {
       const remaining = Math.max(0, targetTime - Date.now())
       setRetryCountdown(remaining)

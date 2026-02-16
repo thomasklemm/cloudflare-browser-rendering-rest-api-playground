@@ -56,7 +56,7 @@ export interface Settings {
 export type RequestState =
   | { status: 'queued' }
   | { status: 'running'; startTime: number }
-  | { status: 'retrying'; attempt: number; nextRetryIn: number }
+  | { status: 'retrying'; attempt: number; nextRetryIn: number; retryAt: number }
   | { status: 'completed' }
   | { status: 'failed' }
 
