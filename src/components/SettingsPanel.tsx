@@ -97,6 +97,17 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
                 {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            <label className="mt-2 flex items-start gap-2 text-xs text-surface-600">
+              <input
+                type="checkbox"
+                checked={settings.rememberApiToken}
+                onChange={(e) => onChange({ ...settings, rememberApiToken: e.target.checked })}
+                className="mt-0.5 rounded border-white/20 bg-black/20 text-accent-primary focus:ring-accent-primary/40"
+              />
+              <span>
+                Remember API token on this browser (stores it in local storage). If disabled, the token is kept for this tab session only.
+              </span>
+            </label>
             <p className="text-xs text-surface-500 mt-2 leading-relaxed">
               Create one at{' '}
               <a
@@ -123,7 +134,8 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
             <div>
               <p className="text-sm font-medium text-surface-800">Credentials are handled client-side</p>
               <p className="text-xs text-surface-500 mt-1 leading-relaxed">
-                Stored in local storage so your settings persist between visits. In production deployments,
+                Account and UI settings are stored in local storage. API token is session-only by default,
+                with optional local persistence when you enable remember mode. In production deployments,
                 requests are sent to this app&apos;s Cloudflare Worker proxy, which forwards Browser Rendering
                 API calls to Cloudflare.
                 No analytics, no tracking, no data collection. This project is{' '}

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
-import type { EndpointId, InputMode, Settings } from './types/api'
+import type { EndpointId, InputMode, Settings, WorkersPlan } from './types/api'
 import { endpoints } from './config/endpoints'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { useBatchApiRequest } from './hooks/useBatchApiRequest'
@@ -11,12 +11,20 @@ import { EndpointForm } from './components/EndpointForm'
 import { CurlPreview } from './components/CurlPreview'
 import { ResponsePanel } from './components/ResponsePanel'
 
+interface SettingsPreferences {
+  accountId: string
+  plan: WorkersPlan
+  rememberApiToken: boolean
+}
+
 export default function App() {
-  const [settings, setSettings] = useLocalStorage<Settings>('cf-br-settings', {
+  const [settingsPrefs, setSettingsPrefs] = useLocalStorage<SettingsPreferences>('cf-br-settings', {
     accountId: '',
-    apiToken: '',
     plan: 'free',
+    rememberApiToken: false,
   })
+  const [sessionApiToken, setSessionApiToken] = useLocalStorage<string>('cf-br-api-token-session', '', 'session')
+  const [rememberedApiToken, setRememberedApiToken] = useLocalStorage<string>('cf-br-api-token', '')
   const [showSettings, setShowSettings] = useState(false)
   const [activeEndpoint, setActiveEndpoint] = useState<EndpointId>('screenshot')
   const [formValues, setFormValues] = useLocalStorage<Record<string, Record<string, string>>>(
@@ -27,13 +35,36 @@ export default function App() {
   const [urlInput, setUrlInput] = useLocalStorage<string>('cf-br-urls', '')
   const [inputMode, setInputMode] = useLocalStorage<InputMode>('cf-br-input-mode', 'url')
 
+  const legacySettingsMigrated = useRef(false)
+
   const { entries, activeIndex, setActiveIndex, loading, execute, switchTo } = useBatchApiRequest()
 
   const endpoint = endpoints.find((e) => e.id === activeEndpoint)!
+  const settings = useMemo<Settings>(
+    () => ({
+      accountId: settingsPrefs.accountId,
+      apiToken: settingsPrefs.rememberApiToken ? rememberedApiToken : sessionApiToken,
+      plan: settingsPrefs.plan,
+      rememberApiToken: settingsPrefs.rememberApiToken,
+    }),
+    [settingsPrefs, rememberedApiToken, sessionApiToken],
+  )
   const currentValues = useMemo(
     () => formValues[activeEndpoint] || {},
     [formValues, activeEndpoint],
   )
+
+  // Migrate legacy localStorage token from previous settings shape.
+  useEffect(() => {
+    if (legacySettingsMigrated.current) return
+    legacySettingsMigrated.current = true
+
+    const legacyToken = (settingsPrefs as SettingsPreferences & { apiToken?: string }).apiToken
+    if (!legacyToken || rememberedApiToken || sessionApiToken) return
+
+    setRememberedApiToken(legacyToken)
+    setSettingsPrefs((prev) => ({ ...prev, rememberApiToken: true }))
+  }, [settingsPrefs, rememberedApiToken, sessionApiToken, setRememberedApiToken, setSettingsPrefs])
 
   const handleFieldChange = useCallback(
     (name: string, value: string) => {
@@ -54,6 +85,25 @@ export default function App() {
       switchTo(id)
     },
     [switchTo],
+  )
+
+  const handleSettingsChange = useCallback(
+    (next: Settings) => {
+      setSettingsPrefs({
+        accountId: next.accountId,
+        plan: next.plan,
+        rememberApiToken: next.rememberApiToken,
+      })
+
+      if (next.rememberApiToken) {
+        setRememberedApiToken(next.apiToken)
+        setSessionApiToken('')
+      } else {
+        setSessionApiToken(next.apiToken)
+        setRememberedApiToken('')
+      }
+    },
+    [setSettingsPrefs, setRememberedApiToken, setSessionApiToken],
   )
 
   const settingsReady = Boolean(settings.accountId && settings.apiToken)
@@ -110,7 +160,7 @@ export default function App() {
       />
 
       {showSettings && (
-        <SettingsPanel settings={settings} onChange={setSettings} onClose={() => setShowSettings(false)} />
+        <SettingsPanel settings={settings} onChange={handleSettingsChange} onClose={() => setShowSettings(false)} />
       )}
 
       <EndpointTabs

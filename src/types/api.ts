@@ -54,6 +54,7 @@ export interface Settings {
   accountId: string
   apiToken: string
   plan: WorkersPlan
+  rememberApiToken: boolean
 }
 
 export type RequestState =
