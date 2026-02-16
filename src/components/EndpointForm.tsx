@@ -344,6 +344,19 @@ interface EndpointFormProps {
   urlCount: number
 }
 
+// Helper to get effective field value, falling back to defaultValue if unset
+function getEffectiveValue(field: FieldConfig, value: string): string {
+  // If value is set (even if empty string for text fields), use it
+  if (value !== undefined && value !== '') return value
+
+  // For boolean fields, if no value is set, use the defaultValue
+  if (field.type === 'boolean' && field.defaultValue !== undefined) {
+    return field.defaultValue ? 'true' : 'false'
+  }
+
+  return value || ''
+}
+
 function FieldInput({
   field,
   value,
@@ -355,6 +368,7 @@ function FieldInput({
   onChange: (value: string) => void
   error: boolean
 }) {
+  const effectiveValue = getEffectiveValue(field, value)
   const border = error
     ? 'border-red-500/60 focus:border-red-400'
     : 'border-surface-300 focus:border-accent-500'
@@ -364,7 +378,7 @@ function FieldInput({
     case 'json':
       return (
         <textarea
-          value={value}
+          value={effectiveValue}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           rows={field.type === 'json' ? 4 : 3}
@@ -374,7 +388,7 @@ function FieldInput({
     case 'select':
       return (
         <select
-          value={value}
+          value={effectiveValue}
           onChange={(e) => onChange(e.target.value)}
           className={`w-full px-3 py-2 bg-surface-200 border ${border} rounded-lg text-sm text-surface-900 focus:outline-none`}
         >
@@ -389,16 +403,16 @@ function FieldInput({
     case 'boolean':
       return (
         <Toggle
-          checked={value === 'true'}
+          checked={effectiveValue === 'true'}
           onChange={(checked) => onChange(checked ? 'true' : 'false')}
-          label={value === 'true' ? 'Yes' : 'No'}
+          label={effectiveValue === 'true' ? 'Yes' : 'No'}
         />
       )
     default:
       return (
         <input
           type={field.type === 'number' ? 'number' : 'text'}
-          value={value}
+          value={effectiveValue}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           className={`w-full px-3 py-2 bg-surface-200 border ${border} rounded-lg text-sm text-surface-900 placeholder:text-surface-500 focus:outline-none`}
