@@ -635,7 +635,7 @@ export function EndpointForm({
                 value={urlInput}
                 onChange={(e) => onUrlInputChange(e.target.value)}
                 placeholder={"https://example.com\nhttps://another.com\nhttps://third-site.com"}
-                rows={Math.max(2, Math.min(6, urlInput.split('\n').length + 1))}
+                rows={Math.max(3, Math.min(6, urlInput.split('\n').length + 1))}
                 className={`w-full px-3 py-2 bg-surface-200 border ${
                   urlHtmlError('url')
                     ? 'border-red-500/60 focus:border-red-400'
