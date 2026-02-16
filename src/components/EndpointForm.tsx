@@ -597,7 +597,15 @@ export function EndpointForm({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-surface-500">{endpoint.description}</p>
+      {/* Endpoint header */}
+      <div className="pb-3 border-b border-surface-300">
+        <h2 className="text-base font-medium text-accent-primary mb-1">
+          /{endpoint.id}
+        </h2>
+        <p className="text-sm text-surface-700 leading-relaxed">
+          {endpoint.description}
+        </p>
+      </div>
 
       {/* URL / HTML input toggle */}
       {endpoint.hasUrlHtmlInput && (
