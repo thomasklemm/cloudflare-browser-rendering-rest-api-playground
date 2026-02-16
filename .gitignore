@@ -25,5 +25,6 @@ dist-ssr
 
 # Wrangler
 .wrangler/
+.wrangler-output/
 wrangler.toml.local
 .dev.vars

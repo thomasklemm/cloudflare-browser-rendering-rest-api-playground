@@ -116,7 +116,8 @@ function unwrapSnapshotEnvelope(data: string): {
       const screenshot = typeof result.screenshot === 'string' ? result.screenshot : null
       const html = typeof result.content === 'string' ? result.content : null
       if (screenshot || html) {
-        const { result: _result, ...meta } = parsed
+        const meta = { ...parsed }
+        delete meta.result
         return { screenshot, html, meta }
       }
     }

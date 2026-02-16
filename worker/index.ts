@@ -3,11 +3,17 @@
  * to the Cloudflare Browser Rendering API
  */
 
-// @ts-ignore - Workers Sites assets
+import manifestJSON from '__STATIC_CONTENT_MANIFEST'
 import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
 
+const assetManifest = JSON.parse(manifestJSON)
+
+interface Env {
+  __STATIC_CONTENT: KVNamespace
+}
+
 export default {
-  async fetch(request: Request, env: any, ctx: any): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url)
 
     // Proxy /api/cf/* to Cloudflare Browser Rendering API
@@ -20,38 +26,41 @@ export default {
       return await getAssetFromKV(
         {
           request,
-          waitUntil(promise) {
-            return ctx.waitUntil(promise)
-          },
+          waitUntil: ctx.waitUntil.bind(ctx),
         },
         {
-          // @ts-ignore
           ASSET_NAMESPACE: env.__STATIC_CONTENT,
-          ASSET_MANIFEST: JSON.parse(env.__STATIC_CONTENT_MANIFEST),
+          ASSET_MANIFEST: assetManifest,
         }
       )
-    } catch (e) {
-      // If asset not found, serve index.html for client-side routing
+    } catch {
+      // If asset not found, serve index.html for client-side routing (SPA)
       try {
-        const notFoundResponse = await getAssetFromKV(
+        const indexRequest = new Request(`${url.origin}/index.html`, request)
+
+        const indexResponse = await getAssetFromKV(
           {
-            request: new Request(`${url.origin}/index.html`, request),
-            waitUntil(promise) {
-              return ctx.waitUntil(promise)
-            },
+            request: indexRequest,
+            waitUntil: ctx.waitUntil.bind(ctx),
           },
           {
-            // @ts-ignore
             ASSET_NAMESPACE: env.__STATIC_CONTENT,
-            ASSET_MANIFEST: JSON.parse(env.__STATIC_CONTENT_MANIFEST),
+            ASSET_MANIFEST: assetManifest,
           }
         )
-        return new Response(notFoundResponse.body, {
-          ...notFoundResponse,
+
+        // Return index.html with 200 status for SPA routing
+        return new Response(indexResponse.body, {
           status: 200,
+          headers: indexResponse.headers,
         })
-      } catch {
-        return new Response('Not Found', { status: 404 })
+      } catch (err) {
+        // If even index.html fails, return error
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        return new Response(`Error loading page: ${errorMessage}`, {
+          status: 500,
+          headers: { 'Content-Type': 'text/plain' },
+        })
       }
     }
   },
@@ -71,9 +80,8 @@ async function handleApiProxy(request: Request, url: URL): Promise<Response> {
     method: request.method,
     headers: request.headers,
     body: request.body,
-    // @ts-ignore
     duplex: 'half',
-  })
+  } as RequestInit)
 
   // Forward to Cloudflare API
   const response = await fetch(proxyRequest)
