@@ -689,7 +689,7 @@ export function EndpointForm({
             {name}
           </button>
           {expandedSections.has(name) && (
-            <div className="px-3 pb-3 space-y-3">
+            <div className="px-3 pt-2 pb-3 space-y-3">
               {fields.map((field) => (
                 <div key={field.name}>
                   <label className="block text-xs text-surface-600 mb-1">
