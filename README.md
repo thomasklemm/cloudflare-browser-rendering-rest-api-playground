@@ -310,7 +310,7 @@ For questions about the Cloudflare Browser Rendering API itself, please refer to
 
 - [Cloudflare Browser Rendering Documentation](https://developers.cloudflare.com/browser-rendering/)
 - [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Cloudflare API Documentation](https://developers.cloudflare.com/api/)
+- [Cloudflare Browser Rendering REST API](https://developers.cloudflare.com/browser-rendering/rest-api/)
 
 ---
 
