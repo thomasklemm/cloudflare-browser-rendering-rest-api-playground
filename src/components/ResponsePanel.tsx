@@ -239,16 +239,36 @@ function ResponseViewer({ response, responseType }: { response: ApiResponse; res
 }
 
 function StatusDot({ entry }: { entry: BatchResponseEntry }) {
-  if (entry.loading) {
-    return <Loader2 className="w-3 h-3 animate-spin text-surface-500" />
+  // Completed states
+  if (!entry.loading) {
+    if (!entry.response) {
+      return <span className="w-2 h-2 rounded-full bg-surface-400" />
+    }
+    if (entry.response.error || entry.response.status >= 400) {
+      return <span className="w-2 h-2 rounded-full bg-red-400" />
+    }
+    return <span className="w-2 h-2 rounded-full bg-green-400" />
   }
-  if (!entry.response) {
-    return <span className="w-2 h-2 rounded-full bg-surface-400" />
+
+  // Loading states - use entry.state for granular status
+  if (entry.state) {
+    switch (entry.state.status) {
+      case 'queued':
+        // Empty gray circle
+        return <span className="w-2 h-2 rounded-full border border-surface-400" />
+      case 'running':
+        // Spinning orange dot
+        return <Loader2 className="w-3 h-3 animate-spin text-accent-primary" />
+      case 'retrying':
+        // Pulsing amber dot
+        return <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+      default:
+        return <Loader2 className="w-3 h-3 animate-spin text-surface-500" />
+    }
   }
-  if (entry.response.error || entry.response.status >= 400) {
-    return <span className="w-2 h-2 rounded-full bg-red-400" />
-  }
-  return <span className="w-2 h-2 rounded-full bg-green-400" />
+
+  // Fallback for loading without state
+  return <Loader2 className="w-3 h-3 animate-spin text-surface-500" />
 }
 
 function timestamp(): string {
@@ -474,13 +494,6 @@ export function ResponsePanel({
                 <span className="truncate max-w-50">
                   {truncateUrl(entry.url)}
                 </span>
-                {entry.state && entry.loading && (
-                  <span className="text-[10px] text-surface-400 ml-1 shrink-0">
-                    {entry.state.status === 'queued' && '(queued)'}
-                    {entry.state.status === 'running' && `(${((Date.now() - entry.state.startTime) / 1000).toFixed(0)}s)`}
-                    {entry.state.status === 'retrying' && `(retry ${entry.state.attempt})`}
-                  </span>
-                )}
               </button>
             ))}
           </div>
