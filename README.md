@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/favicon.svg" alt="Render Prism" width="128" height="128" />
+  <img src="public/icon.png" alt="Browser Bolt" width="128" height="128" />
 </p>
 
 <h1 align="center">Cloudflare Browser Rendering REST API Playground</h1>
