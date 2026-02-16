@@ -37,7 +37,7 @@ export function EndpointTabs({ endpoints, activeId, onSelect }: EndpointTabsProp
                   flex flex-col items-center gap-0.5
                   ${
                     isActive
-                      ? 'bg-accent-primary/20 border-accent-primary shadow-[0_0_20px_var(--color-accent-primary-glow)] text-accent-primary'
+                      ? 'bg-accent-primary/20 border-accent-primary shadow-[0_0_12px_rgba(255,102,0,0.4)] text-accent-primary'
                       : 'bg-glass-control/30 border-white/5 text-white/50 hover:bg-glass-control/50 hover:text-white/80 hover:border-white/10'
                   }
                 `}
