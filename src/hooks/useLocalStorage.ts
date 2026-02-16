@@ -1,9 +1,15 @@
 import { useState, useCallback } from 'react'
 
-export function useLocalStorage<T>(key: string, initialValue: T) {
+type StorageKind = 'local' | 'session'
+
+function getStorage(kind: StorageKind): Storage {
+  return kind === 'session' ? window.sessionStorage : window.localStorage
+}
+
+export function useLocalStorage<T>(key: string, initialValue: T, storageKind: StorageKind = 'local') {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
-      const item = window.localStorage.getItem(key)
+      const item = getStorage(storageKind).getItem(key)
       return item ? (JSON.parse(item) as T) : initialValue
     } catch {
       return initialValue
@@ -14,11 +20,15 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     (value: T | ((val: T) => T)) => {
       setStoredValue((prev) => {
         const valueToStore = value instanceof Function ? value(prev) : value
-        window.localStorage.setItem(key, JSON.stringify(valueToStore))
+        try {
+          getStorage(storageKind).setItem(key, JSON.stringify(valueToStore))
+        } catch {
+          // Ignore storage write failures (e.g. private mode quota errors)
+        }
         return valueToStore
       })
     },
-    [key],
+    [key, storageKind],
   )
 
   return [storedValue, setValue] as const

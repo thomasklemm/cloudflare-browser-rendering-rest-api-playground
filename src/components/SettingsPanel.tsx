@@ -121,9 +121,11 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
           <div className="flex items-start gap-3">
             <ShieldCheck className="w-5 h-5 text-accent-success shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-surface-800">Your credentials never leave your browser</p>
+              <p className="text-sm font-medium text-surface-800">Credentials are handled client-side</p>
               <p className="text-xs text-surface-500 mt-1 leading-relaxed">
-                Stored in local storage only. Sent directly to Cloudflare's API — never to any other server.
+                Stored in session storage (cleared when this tab is closed). In production deployments,
+                requests are sent to this app&apos;s Cloudflare Worker proxy, which forwards Browser Rendering
+                API calls to Cloudflare.
                 No analytics, no tracking, no data collection. This project is{' '}
                 <a
                   href="https://github.com/thomasklemm/cloudflare-browser-rendering-rest-api-playground"

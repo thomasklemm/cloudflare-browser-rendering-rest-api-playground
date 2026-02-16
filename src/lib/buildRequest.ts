@@ -485,7 +485,8 @@ export function buildFetchOptions(
   settings: Settings,
   formValues: Record<string, string>,
 ) {
-  const path = `/api/cf/client/v4/accounts/${settings.accountId}/browser-rendering${endpoint.path}`
+  const accountId = encodeURIComponent(settings.accountId.trim())
+  const path = `/api/cf/client/v4/accounts/${accountId}/browser-rendering${endpoint.path}`
   const body = buildBody(endpoint, formValues)
 
   return {
@@ -507,7 +508,10 @@ export function buildCurlCommand(
   formValues: Record<string, string>,
   maskToken = true,
 ): string {
-  const realUrl = `https://api.cloudflare.com/client/v4/accounts/${settings.accountId || '<ACCOUNT_ID>'}/browser-rendering${endpoint.path}`
+  const accountId = settings.accountId.trim()
+    ? encodeURIComponent(settings.accountId.trim())
+    : '<ACCOUNT_ID>'
+  const realUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/browser-rendering${endpoint.path}`
   const body = buildBody(endpoint, formValues)
   const token = maskToken ? '<API_TOKEN>' : (settings.apiToken || '<API_TOKEN>')
 

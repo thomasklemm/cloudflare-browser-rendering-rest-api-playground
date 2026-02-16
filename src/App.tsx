@@ -16,16 +16,17 @@ export default function App() {
     accountId: '',
     apiToken: '',
     plan: 'free',
-  })
+  }, 'session')
   const [showSettings, setShowSettings] = useState(false)
   const [activeEndpoint, setActiveEndpoint] = useState<EndpointId>('screenshot')
   const [formValues, setFormValues] = useLocalStorage<Record<string, Record<string, string>>>(
     'cf-br-form-values',
     {},
+    'session',
   )
   // Shared URL input — persists across endpoint tabs
-  const [urlInput, setUrlInput] = useLocalStorage<string>('cf-br-urls', '')
-  const [inputMode, setInputMode] = useLocalStorage<InputMode>('cf-br-input-mode', 'url')
+  const [urlInput, setUrlInput] = useLocalStorage<string>('cf-br-urls', '', 'session')
+  const [inputMode, setInputMode] = useLocalStorage<InputMode>('cf-br-input-mode', 'url', 'session')
 
   const { entries, activeIndex, setActiveIndex, loading, execute, switchTo } = useBatchApiRequest()
 

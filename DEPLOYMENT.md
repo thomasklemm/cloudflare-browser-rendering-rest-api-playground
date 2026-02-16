@@ -127,7 +127,11 @@ The Worker uses `@cloudflare/kv-asset-handler` to serve built frontend files fro
 
 Requests to `/api/cf/*` are proxied to `https://api.cloudflare.com`:
 - Path rewriting: `/api/cf/client/v4/...` → `https://api.cloudflare.com/client/v4/...`
-- CORS headers added automatically
+- Only Browser Rendering API paths are allowed (`/client/v4/accounts/{id}/browser-rendering/...`)
+- Only `POST` and `OPTIONS` are accepted at the proxy endpoint
+- Browser requests are restricted to same-origin (`Origin` must match the worker origin)
+- Requests must include `Authorization: Bearer ...` and `Content-Type: application/json`
+- Only required headers are forwarded upstream (`Authorization`, `Content-Type`, `Accept`)
 - Request headers (auth tokens) forwarded to CF API
 
 ### Local Development
@@ -162,8 +166,9 @@ npx wrangler tail
 
 ### CORS Issues
 
-The Worker adds CORS headers automatically. If you still see CORS errors:
+The Worker only allows browser requests from the same origin. If you see CORS errors:
 - Check that requests go through `/api/cf/*` path
+- Verify the app is served from the same Worker/domain as the API proxy
 - Verify the proxy is working in browser DevTools Network tab
 
 ### KV Storage Limits
