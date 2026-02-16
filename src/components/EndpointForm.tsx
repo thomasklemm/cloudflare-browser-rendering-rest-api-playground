@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, Cookie, ImageDown } from 'lucide-react'
 import type { EndpointConfig, FieldConfig, InputMode } from '../types/api'
 import { JsonSchemaBuilder } from './JsonSchemaBuilder'
+import { Toggle } from './Toggle'
 
 // Quick-start examples for the /json endpoint.
 // Ordered: broad/any-page → landing pages → content verticals → technical.
@@ -387,15 +388,11 @@ function FieldInput({
       )
     case 'boolean':
       return (
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={value === 'true'}
-            onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
-            className="w-4 h-4 rounded border-surface-400 accent-accent-500"
-          />
-          <span className="text-sm text-surface-700">{value === 'true' ? 'Yes' : 'No'}</span>
-        </label>
+        <Toggle
+          checked={value === 'true'}
+          onChange={(checked) => onChange(checked ? 'true' : 'false')}
+          label={value === 'true' ? 'Yes' : 'No'}
+        />
       )
     default:
       return (
@@ -574,32 +571,28 @@ export function EndpointForm({
       {/* Script injection toggles */}
       {endpoint.hasUrlHtmlInput && (
         <div className="space-y-2">
-          <label className="flex items-center gap-2.5 cursor-pointer px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg">
-            <input
-              type="checkbox"
-              checked={values._dismissCookies === 'true'}
-              onChange={(e) => onChange('_dismissCookies', e.target.checked ? 'true' : 'false')}
-              className="w-4 h-4 rounded border-surface-400 accent-accent-500"
-            />
-            <Cookie className="w-3.5 h-3.5 text-surface-500" />
-            <div>
+          <div className="flex items-center gap-2.5 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg">
+            <Cookie className="w-3.5 h-3.5 text-surface-500 shrink-0" />
+            <div className="flex-1 min-w-0">
               <span className="text-xs text-surface-800">Dismiss cookie banners</span>
               <p className="text-xs text-surface-500">Blocks CMP scripts and clicks reject/accept buttons</p>
             </div>
-          </label>
-          <label className="flex items-center gap-2.5 cursor-pointer px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg">
-            <input
-              type="checkbox"
-              checked={values._loadAllImages === 'true'}
-              onChange={(e) => onChange('_loadAllImages', e.target.checked ? 'true' : 'false')}
-              className="w-4 h-4 rounded border-surface-400 accent-accent-500"
+            <Toggle
+              checked={values._dismissCookies === 'true'}
+              onChange={(checked) => onChange('_dismissCookies', checked ? 'true' : 'false')}
             />
-            <ImageDown className="w-3.5 h-3.5 text-surface-500" />
-            <div>
+          </div>
+          <div className="flex items-center gap-2.5 px-3 py-2 bg-surface-200 border border-surface-300 rounded-lg">
+            <ImageDown className="w-3.5 h-3.5 text-surface-500 shrink-0" />
+            <div className="flex-1 min-w-0">
               <span className="text-xs text-surface-800">Load all images</span>
               <p className="text-xs text-surface-500">Swaps lazy-load attributes to force all images to load</p>
             </div>
-          </label>
+            <Toggle
+              checked={values._loadAllImages === 'true'}
+              onChange={(checked) => onChange('_loadAllImages', checked ? 'true' : 'false')}
+            />
+          </div>
         </div>
       )}
 
