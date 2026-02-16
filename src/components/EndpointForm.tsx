@@ -596,7 +596,7 @@ export function EndpointForm({
         : `Send ${urlCount} Requests`
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <p className="text-xs text-surface-500">{endpoint.description}</p>
 
       {/* URL / HTML input toggle */}
