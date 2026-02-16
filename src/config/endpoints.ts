@@ -217,6 +217,7 @@ export const endpoints: EndpointConfig[] = [
           { label: 'webp', value: 'webp' },
         ],
         section: 'Screenshot',
+        hint: 'Output image format (default: png)',
       },
       {
         name: 'screenshotOptions.fullPage',
@@ -232,7 +233,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'number',
         placeholder: '80',
         section: 'Screenshot',
-        hint: 'Only for jpeg/webp',
+        hint: 'Image quality 1-100 (only for jpeg/webp, optional)',
       },
       {
         name: 'screenshotOptions.omitBackground',
@@ -256,7 +257,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'text',
         placeholder: '#main-content',
         section: 'Screenshot',
-        hint: 'Screenshot a specific element instead of the page',
+        hint: 'Capture specific element instead of full page (optional)',
       },
       {
         name: 'screenshotOptions.clip.x',
@@ -264,6 +265,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'number',
         placeholder: '0',
         section: 'Clip Region',
+        hint: 'X coordinate in pixels (optional)',
       },
       {
         name: 'screenshotOptions.clip.y',
@@ -271,6 +273,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'number',
         placeholder: '0',
         section: 'Clip Region',
+        hint: 'Y coordinate in pixels (optional)',
       },
       {
         name: 'screenshotOptions.clip.width',
@@ -278,6 +281,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'number',
         placeholder: '800',
         section: 'Clip Region',
+        hint: 'Region width in pixels (optional)',
       },
       {
         name: 'screenshotOptions.clip.height',
@@ -285,6 +289,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'number',
         placeholder: '600',
         section: 'Clip Region',
+        hint: 'Region height in pixels (optional)',
       },
       // Shared
       ...sharedFields,
@@ -320,6 +325,7 @@ export const endpoints: EndpointConfig[] = [
           { label: 'A6', value: 'a6' },
         ],
         section: 'PDF Options',
+        hint: 'Paper size (default: Letter)',
       },
       {
         name: 'pdfOptions.printBackground',
@@ -343,7 +349,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'number',
         placeholder: '1',
         section: 'PDF Options',
-        hint: 'Zoom level (0.1 to 2)',
+        hint: 'Zoom/scale level 0.1-2 (default: 1)',
       },
       {
         name: 'pdfOptions.preferCSSPageSize',
@@ -383,7 +389,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'text',
         placeholder: '1-5, 8',
         section: 'PDF Options',
-        hint: 'e.g. "1-5", "1,3,5-7". Empty = all pages',
+        hint: 'Pages to include e.g. "1-5,8" (default: all pages)',
       },
       {
         name: 'pdfOptions.width',
@@ -391,7 +397,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'text',
         placeholder: '8.5in',
         section: 'PDF Page Size',
-        hint: 'Overrides format. Use units: px, in, cm, mm',
+        hint: 'Custom width with units (px/in/cm/mm), overrides format (optional)',
       },
       {
         name: 'pdfOptions.height',
@@ -399,6 +405,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'text',
         placeholder: '11in',
         section: 'PDF Page Size',
+        hint: 'Custom height with units (px/in/cm/mm), overrides format (optional)',
       },
       {
         name: 'pdfOptions.margin.top',
@@ -406,6 +413,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'text',
         placeholder: '1cm',
         section: 'PDF Margins',
+        hint: 'Top margin with units (optional)',
       },
       {
         name: 'pdfOptions.margin.bottom',
@@ -413,6 +421,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'text',
         placeholder: '1cm',
         section: 'PDF Margins',
+        hint: 'Bottom margin with units (optional)',
       },
       {
         name: 'pdfOptions.margin.left',
@@ -420,6 +429,7 @@ export const endpoints: EndpointConfig[] = [
         type: 'text',
         placeholder: '1cm',
         section: 'PDF Margins',
+        hint: 'Left margin with units (optional)',
       },
       {
         name: 'pdfOptions.margin.right',
