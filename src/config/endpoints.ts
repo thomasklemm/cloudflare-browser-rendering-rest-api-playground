@@ -190,6 +190,7 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'content',
     label: 'Content',
+    shortDesc: 'Rendered HTML',
     method: 'POST',
     path: '/content',
     description: 'Get the rendered HTML content of a page',
@@ -202,6 +203,7 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'screenshot',
     label: 'Screenshot',
+    shortDesc: 'Page capture',
     method: 'POST',
     path: '/screenshot',
     description: 'Take a screenshot of a page',
@@ -294,6 +296,7 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'pdf',
     label: 'PDF',
+    shortDesc: 'Print to PDF',
     method: 'POST',
     path: '/pdf',
     description: 'Generate a PDF of a page',
@@ -460,6 +463,7 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'json',
     label: 'JSON',
+    shortDesc: 'AI extraction',
     method: 'POST',
     path: '/json',
     description: 'Extract structured JSON from a page using AI',
@@ -497,6 +501,7 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'markdown',
     label: 'Markdown',
+    shortDesc: 'Text conversion',
     method: 'POST',
     path: '/markdown',
     description: 'Convert a page to Markdown',
@@ -509,6 +514,7 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'snapshot',
     label: 'Snapshot',
+    shortDesc: 'HTML + image',
     method: 'POST',
     path: '/snapshot',
     description: 'Get HTML content and a base64 screenshot',
@@ -530,6 +536,7 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'scrape',
     label: 'Scrape',
+    shortDesc: 'CSS selectors',
     method: 'POST',
     path: '/scrape',
     description: 'Scrape structured data from a page using CSS selectors',
@@ -552,6 +559,7 @@ export const endpoints: EndpointConfig[] = [
   {
     id: 'links',
     label: 'Links',
+    shortDesc: 'Link discovery',
     method: 'POST',
     path: '/links',
     description: 'Extract all links from a page',

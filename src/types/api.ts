@@ -29,6 +29,7 @@ export type InputMode = 'url' | 'html'
 export interface EndpointConfig {
   id: EndpointId
   label: string
+  shortDesc: string
   method: 'GET' | 'POST'
   path: string
   description: string
