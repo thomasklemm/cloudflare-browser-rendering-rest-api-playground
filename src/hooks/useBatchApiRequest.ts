@@ -1,19 +1,31 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import type { EndpointConfig, Settings, ApiResponse, BatchResponseEntry, RequestState } from '../types/api'
+import type { EndpointConfig, Settings, ApiResponse, BatchResponseEntry, RequestState, WorkersPlan } from '../types/api'
 import { buildFetchOptions } from '../lib/buildRequest'
 
-// Concurrency and pacing settings
 // Cloudflare Browser Rendering REST API limits (as of Jan 2025):
 // Free Plan: 6 req/min (1 every 10s), 3 concurrent, 3 new browsers/min
 // Paid Plan: 180 req/min (3/sec), 30 concurrent, 30 new browsers/min
 //
 // IMPORTANT: Rate limits use fixed per-second fill rate, NOT burst allowance.
-// Must spread requests evenly. For paid: max 3/second = 1 every 333ms.
-//
-// Settings below are tuned for FREE PLAN (most restrictive):
-const MAX_CONCURRENT = 2  // Free allows 3 concurrent, use 2 to be safe
+// Must spread requests evenly.
+
 const MAX_RETRIES = 3
-const INITIAL_RETRY_MS = 10000  // 10s initial delay (respects free plan 10s/request rate)
+
+// Plan-specific rate limit configurations
+const PLAN_LIMITS = {
+  free: {
+    maxConcurrent: 2,          // Free allows 3 concurrent, use 2 to be safe
+    maxRequestsPerMin: 5,      // Free allows 6/min, use 5 to allow retries
+    minRequestSpacingMs: 10000, // 10 seconds between requests (1 every 10s)
+    initialRetryMs: 10000,     // 10s initial retry delay
+  },
+  paid: {
+    maxConcurrent: 10,         // Paid allows 30 concurrent, use 10 for reasonable batch size
+    maxRequestsPerMin: 150,    // Paid allows 180/min, use 150 to be safe
+    minRequestSpacingMs: 400,  // ~400ms between requests (2.5/sec, under 3/sec limit)
+    initialRetryMs: 5000,      // 5s initial retry delay
+  },
+} as const
 
 function wait(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -25,14 +37,15 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
   })
 }
 
-// Global rate limiter tuned for FREE PLAN (6 requests/minute = 1 every 10 seconds)
-// For paid plan users: you can increase these values or disable the rate limiter
+// Global rate limiter: tracks recent request timestamps across all endpoint tabs
 const globalRequestTimestamps: number[] = []
-const RATE_LIMIT_WINDOW_MS = 60000      // 1 minute window
-const RATE_LIMIT_MAX_REQUESTS = 5       // Conservative: 5/min for free (allows 1 retry)
-const MIN_REQUEST_SPACING_MS = 10000    // 10 seconds between requests (free plan rate)
+const RATE_LIMIT_WINDOW_MS = 60000  // 1 minute window
 
-async function waitForRateLimit(signal?: AbortSignal): Promise<void> {
+async function waitForRateLimit(
+  plan: WorkersPlan,
+  signal?: AbortSignal,
+): Promise<void> {
+  const limits = PLAN_LIMITS[plan]
   const now = Date.now()
 
   // Clean up timestamps older than 1 minute
@@ -40,23 +53,23 @@ async function waitForRateLimit(signal?: AbortSignal): Promise<void> {
     globalRequestTimestamps.shift()
   }
 
-  // Enforce minimum spacing between requests (2 seconds)
+  // Enforce minimum spacing between requests
   if (globalRequestTimestamps.length > 0) {
     const lastRequestTime = globalRequestTimestamps[globalRequestTimestamps.length - 1]
     const timeSinceLastRequest = now - lastRequestTime
-    if (timeSinceLastRequest < MIN_REQUEST_SPACING_MS) {
-      const spacingWait = MIN_REQUEST_SPACING_MS - timeSinceLastRequest
+    if (timeSinceLastRequest < limits.minRequestSpacingMs) {
+      const spacingWait = limits.minRequestSpacingMs - timeSinceLastRequest
       await wait(spacingWait, signal)
     }
   }
 
-  // If we've made 5+ requests in the last minute, wait until the oldest one expires
+  // If we've made max requests in the last minute, wait until the oldest one expires
   const nowAfterSpacing = Date.now()
   while (globalRequestTimestamps.length > 0 && globalRequestTimestamps[0] < nowAfterSpacing - RATE_LIMIT_WINDOW_MS) {
     globalRequestTimestamps.shift()
   }
 
-  if (globalRequestTimestamps.length >= RATE_LIMIT_MAX_REQUESTS) {
+  if (globalRequestTimestamps.length >= limits.maxRequestsPerMin) {
     const oldestTimestamp = globalRequestTimestamps[0]
     const waitTime = (oldestTimestamp + RATE_LIMIT_WINDOW_MS) - nowAfterSpacing
     if (waitTime > 0) {
@@ -140,6 +153,10 @@ export function useBatchApiRequest() {
       setAllEntries((prev) => ({ ...prev, [key]: initial }))
       setAllActiveIndexes((prev) => ({ ...prev, [key]: 0 }))
 
+      // Get plan-specific limits
+      const plan = settings.plan || 'free'  // Default to free plan if not set
+      const limits = PLAN_LIMITS[plan]
+
       // Single request with retry-on-429 logic
       async function fetchWithRetry(
         url: string,
@@ -162,7 +179,7 @@ export function useBatchApiRequest() {
 
           // Wait for rate limit before making request
           try {
-            await waitForRateLimit(controller.signal)
+            await waitForRateLimit(plan, controller.signal)
           } catch (err) {
             if (controller.signal.aborted) return
             throw err
@@ -179,7 +196,7 @@ export function useBatchApiRequest() {
               const retryAfter = res.headers.get('retry-after')
               const delayMs = retryAfter
                 ? parseInt(retryAfter, 10) * 1000
-                : INITIAL_RETRY_MS * Math.pow(2, attempt)
+                : limits.initialRetryMs * Math.pow(2, attempt)
 
               // Set retrying state
               const retryAt = Date.now() + delayMs
@@ -247,7 +264,7 @@ export function useBatchApiRequest() {
 
             // Retry with backoff for transient network errors
             if (attempt < MAX_RETRIES) {
-              const delayMs = INITIAL_RETRY_MS * Math.pow(2, attempt)
+              const delayMs = limits.initialRetryMs * Math.pow(2, attempt)
 
               // Set retrying state
               const retryAt = Date.now() + delayMs
@@ -309,9 +326,9 @@ export function useBatchApiRequest() {
         }
       }
 
-      // Launch up to MAX_CONCURRENT workers
+      // Launch up to maxConcurrent workers
       const workers = Array.from(
-        { length: Math.min(MAX_CONCURRENT, urls.length) },
+        { length: Math.min(limits.maxConcurrent, urls.length) },
         () => runNext(),
       )
       await Promise.allSettled(workers)

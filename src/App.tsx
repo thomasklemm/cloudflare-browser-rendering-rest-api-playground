@@ -16,6 +16,7 @@ export default function App() {
   const [settings, setSettings] = useLocalStorage<Settings>('cf-br-settings', {
     accountId: '',
     apiToken: '',
+    plan: 'free',
   })
   const [showSettings, setShowSettings] = useState(false)
   const [activeEndpoint, setActiveEndpoint] = useState<EndpointId>('screenshot')

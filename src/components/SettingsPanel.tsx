@@ -47,6 +47,67 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
 
         <h2 id="settings-title" className="text-xl font-light mb-6 text-surface-900">API Settings</h2>
 
+        {/* Workers Plan Selector */}
+        <div className="mb-6">
+          <label className="block text-sm text-surface-600 mb-2 font-medium">Workers Plan</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => onChange({ ...settings, plan: 'free' })}
+              className={`p-4 border rounded-xl text-left transition-all ${
+                settings.plan === 'free'
+                  ? 'border-accent-500 bg-accent-500/10 ring-2 ring-accent-500/20'
+                  : 'border-white/10 bg-black/20 hover:border-white/20'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-surface-900">Free Plan</span>
+                {settings.plan === 'free' && (
+                  <div className="w-2 h-2 rounded-full bg-accent-500"></div>
+                )}
+              </div>
+              <div className="text-xs text-surface-600 space-y-1">
+                <div>• 6 requests/minute (1 every 10s)</div>
+                <div>• 3 concurrent browsers</div>
+                <div>• 10 min browser time/day</div>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange({ ...settings, plan: 'paid' })}
+              className={`p-4 border rounded-xl text-left transition-all ${
+                settings.plan === 'paid'
+                  ? 'border-accent-500 bg-accent-500/10 ring-2 ring-accent-500/20'
+                  : 'border-white/10 bg-black/20 hover:border-white/20'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-surface-900">Paid Plan</span>
+                {settings.plan === 'paid' && (
+                  <div className="w-2 h-2 rounded-full bg-accent-500"></div>
+                )}
+              </div>
+              <div className="text-xs text-surface-600 space-y-1">
+                <div>• 180 requests/minute (3/sec)</div>
+                <div>• 30 concurrent browsers</div>
+                <div>• Unlimited browser time</div>
+              </div>
+            </button>
+          </div>
+          <p className="text-xs text-surface-500 mt-2">
+            Select your Workers plan to use appropriate rate limits. Learn more about{' '}
+            <a
+              href="https://developers.cloudflare.com/browser-rendering/limits/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent-primary hover:text-accent-500 inline-flex items-center gap-0.5 transition-colors"
+            >
+              Browser Rendering limits
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="account-id" className="block text-sm text-surface-600 mb-2 font-medium">Account ID</label>

@@ -48,9 +48,12 @@ export interface ApiResponse {
   error?: string
 }
 
+export type WorkersPlan = 'free' | 'paid'
+
 export interface Settings {
   accountId: string
   apiToken: string
+  plan: WorkersPlan
 }
 
 export type RequestState =

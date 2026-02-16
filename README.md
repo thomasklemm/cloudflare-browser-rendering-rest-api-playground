@@ -72,6 +72,7 @@ This playground provides an intuitive interface to explore all these capabilitie
 - Node.js 20+
 - A Cloudflare account with Browser Rendering enabled
 - Cloudflare Account ID and API Token
+- Workers Free or Paid plan (see [Rate Limits](#rate-limits) below)
 
 ### Getting Your Cloudflare Credentials
 
@@ -103,11 +104,43 @@ Open http://localhost:5173 in your browser.
 
 1. Click the settings icon (gear) in the top-right corner
 2. Enter your Cloudflare Account ID and API Token
-3. Click "Save Settings"
-4. Select an endpoint (e.g., "Screenshot")
-5. Enter one or more URLs (e.g., `https://example.com`) — add multiple URLs (one per line) to test in parallel
-6. Click "Send Request" or press Cmd/Ctrl+Enter
-7. View the response(s) in the right panel — switch between results using the tabs when testing multiple URLs
+3. Select your Workers plan (Free or Paid) to use appropriate rate limits
+4. Click "Save Settings"
+5. Select an endpoint (e.g., "Screenshot")
+6. Enter one or more URLs (e.g., `https://example.com`) — add multiple URLs (one per line) to test in parallel
+7. Click "Send Request" or press Cmd/Ctrl+Enter
+8. View the response(s) in the right panel — switch between results using the tabs when testing multiple URLs
+
+## Rate Limits
+
+Cloudflare Browser Rendering enforces different rate limits based on your Workers plan. **Select your plan in the settings** to ensure optimal performance and avoid 429 errors.
+
+### Workers Free Plan
+
+- **6 requests per minute** (1 every 10 seconds)
+- **3 concurrent browsers**
+- **3 new browsers per minute**
+- **10 minutes of browser time per day**
+
+**Batch processing on Free:** For 6 URLs, expect ~50 seconds total (2 concurrent, 10s spacing).
+
+### Workers Paid Plan
+
+- **180 requests per minute** (3 per second)
+- **30 concurrent browsers**
+- **30 new browsers per minute**
+- **Unlimited browser time**
+
+**Batch processing on Paid:** For 6 URLs, expect ~2-3 seconds total (10 concurrent, 400ms spacing).
+
+### Important Notes
+
+- Rate limits use **fixed per-second fill rate**, not burst allowance
+- Requests must be spread evenly throughout the minute
+- The playground automatically adjusts concurrency and spacing based on your selected plan
+- 429 errors trigger exponential backoff retries with server-provided `retry-after` headers
+
+**Learn more:** [Browser Rendering Limits Documentation](https://developers.cloudflare.com/browser-rendering/limits/)
 
 ## Deployment
 
@@ -276,6 +309,7 @@ Contributions are welcome! This is a community project, and we'd love your help 
 - **Binary Response Size**: Large images/PDFs may be slow to load depending on your network.
 - **Cookie Banner Coverage**: The dismissal logic covers 18+ CMP providers but may not catch every custom implementation.
 - **Browser Compatibility**: Tested in modern browsers (Chrome, Firefox, Safari, Edge). IE is not supported.
+- **Rate Limits**: Ensure you've selected the correct Workers plan in settings. Free plan is limited to 6 requests/minute with 10-second spacing between requests.
 
 ## License
 
