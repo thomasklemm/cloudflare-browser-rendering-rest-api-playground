@@ -183,7 +183,7 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
               <div className="text-xs text-surface-600 space-y-1">
                 <div>• 600 requests/min (10/sec)</div>
                 <div>• 30 concurrent browsers</div>
-                <div>• 2 hrs/mo included, then $0.10/hr</div>
+                <div>• 10 hrs/mo included, then $0.09/hr</div>
               </div>
             </button>
           </div>
