@@ -2,9 +2,9 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import type { EndpointConfig, Settings, ApiResponse, BatchResponseEntry, RequestState, WorkersPlan } from '../types/api'
 import { buildFetchOptions } from '../lib/buildRequest'
 
-// Cloudflare Browser Rendering REST API limits (as of Jan 2025):
-// Free Plan: 6 req/min (1 every 10s), 3 concurrent, 3 new browsers/min
-// Paid Plan: 180 req/min (3/sec), 30 concurrent, 30 new browsers/min
+// Cloudflare Browser Rendering REST API limits (as of Mar 2026):
+// Free Plan: 6 req/min (1 every 10s), 3 concurrent browsers
+// Paid Plan: 600 req/min (10/sec), 30 concurrent browsers
 //
 // IMPORTANT: Rate limits use fixed per-second fill rate, NOT burst allowance.
 // Must spread requests evenly.
@@ -14,28 +14,22 @@ const MAX_RETRIES = 3
 // Plan-specific rate limit configurations
 // Official limits: https://developers.cloudflare.com/browser-rendering/limits/
 //
-// CRITICAL: Two separate limits apply to REST API:
-//   1. Requests per minute (API calls)
-//   2. New browser instances per minute (each API call = new browser)
-//
-// Free: 6 req/min (1 every 10s) AND 3 new browsers/min (1 every 20s)
-// Paid: 180 req/min (3/sec) AND 30 new browsers/min (1 every 2s)
-//
-// Since each REST API request creates a new browser instance, the tighter
-// "new browser instances" limit is what we must respect!
+// REST API rate limits (separate from Bindings "new browser instances" limits):
+// Free: 6 req/min (1 every 10s)
+// Paid: 600 req/min (10/sec)
 //
 // Rate limits use FIXED per-second fill rate - must spread evenly, no burst
 const PLAN_LIMITS = {
   free: {
     maxConcurrent: 1,           // Free: sequential processing only
-    maxRequestsPerMin: 3,       // 3 new browsers/min (tighter than 6 req/min)
-    minRequestSpacingMs: 20000, // 20 seconds (3 new browsers/min = 1 every 20s)
-    initialRetryMs: 20000,      // 20s initial retry delay
+    maxRequestsPerMin: 6,       // 6 req/min
+    minRequestSpacingMs: 10000, // 10 seconds (1 every 10s)
+    initialRetryMs: 15000,      // 15s initial retry delay
   },
   paid: {
-    maxConcurrent: 10,          // Paid allows 30 concurrent, use 10 for reasonable batch size
-    maxRequestsPerMin: 30,      // 30 new browsers/min (tighter than 180 req/min)
-    minRequestSpacingMs: 2000,  // 2 seconds (30 new browsers/min = 1 every 2s)
+    maxConcurrent: 10,          // Reasonable batch size for the playground
+    maxRequestsPerMin: 600,     // 600 req/min (10/sec)
+    minRequestSpacingMs: 100,   // 100ms (10/sec fill rate)
     initialRetryMs: 5000,       // 5s initial retry delay
   },
 } as const

@@ -66,12 +66,11 @@ Add your `CLOUDFLARE_API_TOKEN` as a repository secret (Settings > Secrets > Act
 
 ## Rate Limits
 
-Each API request spins up a new browser instance. The **new browsers per minute** limit is the binding constraint.
+Each API request spins up a new browser instance. Rate limits use a fixed per-second fill rate — requests must be spread evenly.
 
 | | Free Plan | Paid Plan |
 | --- | --- | --- |
-| Requests/min | 6 | 180 |
-| New browsers/min | **3** (1 every 20s) | **30** (1 every 2s) |
+| REST API requests | **6**/min (1 every 10s) | **600**/min (10/sec) |
 | Concurrent browsers | 3 | 30 |
 | Browser time | 10 min/day | Unlimited |
 
