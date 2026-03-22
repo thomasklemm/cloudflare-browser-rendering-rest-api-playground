@@ -7,8 +7,9 @@ export type EndpointId =
   | 'snapshot'
   | 'scrape'
   | 'links'
+  | 'crawl'
 
-export type ResponseType = 'html' | 'image' | 'pdf' | 'json' | 'markdown' | 'snapshot'
+export type ResponseType = 'html' | 'image' | 'pdf' | 'json' | 'markdown' | 'snapshot' | 'crawl'
 
 export type FieldType = 'text' | 'number' | 'boolean' | 'select' | 'textarea' | 'json'
 

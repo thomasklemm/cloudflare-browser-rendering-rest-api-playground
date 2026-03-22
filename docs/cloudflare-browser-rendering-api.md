@@ -7,6 +7,8 @@
 
 The Cloudflare Browser Rendering REST API provides a RESTful interface for common browser actions such as capturing screenshots, extracting HTML content, generating PDFs, and more.
 
+Most endpoints are single request/response operations. The `/crawl` endpoint is different: it creates an asynchronous crawl job, then requires follow-up `GET` requests to poll status and page through results, plus an optional `DELETE` request to cancel an in-flight job.
+
 **Base URL:** `https://api.cloudflare.com/client/v4/accounts/{accountId}/browser-rendering`
 
 **Authentication:** Bearer token via `Authorization: Bearer <apiToken>` header. Requires a custom API token with the `Browser Rendering - Edit` permission.
@@ -620,10 +622,98 @@ Extracts all hyperlinks from a rendered page.
 
 ---
 
+## 9. Crawl Endpoint (`/crawl`)
+
+**POST** `https://api.cloudflare.com/client/v4/accounts/{accountId}/browser-rendering/crawl`
+
+Starts an async crawl job for a starting URL and returns a job ID immediately.
+
+**Docs:** https://developers.cloudflare.com/browser-rendering/rest-api/crawl-endpoint/
+
+### Endpoint-Specific Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `url` | string | Yes | - | Starting URL for the crawl job. |
+| `limit` | number | No | 10 | Maximum pages to crawl. Free plan users are capped at 100 pages/crawl. |
+| `depth` | number | No | 100000 | Maximum crawl depth from the starting URL. |
+| `source` | string | No | `"all"` | URL discovery source: `"all"`, `"sitemaps"`, or `"links"`. |
+| `formats` | string[] | No | `["html"]` | Output formats to store for each record: `"html"`, `"markdown"`, `"json"`. |
+| `render` | boolean | No | `true` | If `false`, fetches static HTML without browser execution. |
+| `jsonOptions` | object | No | - | JSON extraction configuration when `formats` includes `"json"`. |
+| `maxAge` | number | No | 86400 | Cache freshness in seconds before refetching. |
+| `modifiedSince` | number | No | - | Unix timestamp in seconds; only crawl newer content. |
+| `crawlPurposes` | string[] | No | `["search","ai-input","ai-train"]` | Declares content usage for Content Signals enforcement. |
+| `options.includeExternalLinks` | boolean | No | false | Follow external-domain links. |
+| `options.includeSubdomains` | boolean | No | false | Follow subdomain links. |
+| `options.includePatterns` | string[] | No | - | Wildcard URL patterns to include. |
+| `options.excludePatterns` | string[] | No | - | Wildcard URL patterns to exclude. |
+
+### Create Response
+
+```json
+{
+  "success": true,
+  "result": "c7f8s2d9-a8e7-4b6e-8e4d-3d4a1b2c3f4e"
+}
+```
+
+### Get Crawl Result
+
+**GET** `https://api.cloudflare.com/client/v4/accounts/{accountId}/browser-rendering/crawl/{jobId}`
+
+Use `limit`, `cursor`, `status`, and `cacheTTL` query parameters to keep status checks lightweight and page through records.
+
+Example response:
+
+```json
+{
+  "success": true,
+  "result": {
+    "id": "c7f8s2d9-a8e7-4b6e-8e4d-3d4a1b2c3f4e",
+    "status": "completed",
+    "browserSecondsUsed": 91.4,
+    "total": 50,
+    "finished": 50,
+    "skipped": 4,
+    "records": [
+      {
+        "url": "https://developers.cloudflare.com/workers/",
+        "status": "completed",
+        "markdown": "# Cloudflare Workers",
+        "metadata": {
+          "status": 200,
+          "title": "Cloudflare Workers · Cloudflare Docs",
+          "url": "https://developers.cloudflare.com/workers/"
+        }
+      }
+    ],
+    "cursor": "10"
+  }
+}
+```
+
+Record-level statuses are `queued`, `completed`, `disallowed`, `skipped`, `errored`, and `cancelled`.
+
+### Cancel Crawl Job
+
+**DELETE** `https://api.cloudflare.com/client/v4/accounts/{accountId}/browser-rendering/crawl/{jobId}`
+
+Cancels an in-progress crawl job and stops all queued URLs.
+
+### Workflow Notes
+
+- Crawl jobs can run for up to 7 days.
+- Completed crawl results are retained for 14 days by Cloudflare.
+- The endpoint respects `robots.txt`, `crawl-delay`, and Content Signals by default.
+- The crawler identifies itself as `CloudflareBrowserRenderingCrawler/1.0`.
+
+---
+
 ## Coverage: App vs. API
 
-All documented API parameters are implemented in the app's endpoint configuration (`src/config/endpoints.ts`).
+Single-request endpoints are implemented through the app's endpoint configuration (`src/config/endpoints.ts`).
 
-Every endpoint includes the full set of shared parameters (viewport, authentication, cookies, headers, request filtering, script/style injection, JavaScript toggle) plus all endpoint-specific parameters.
+The `/crawl` endpoint is implemented as a dedicated async workflow with its own form, polling, pagination, cancel, and export UI. The app currently exposes the core crawl fields plus browser-only controls that make sense for rendered crawls, rather than every single shared field from the one-shot endpoints.
 
-The only parameter not exposed as a form field is `screenshotOptions.encoding` (binary vs base64) — the app always uses binary encoding and renders images directly via blob URLs.
+The only parameter intentionally omitted from the one-shot endpoints remains `screenshotOptions.encoding` (binary vs base64) — the app always uses binary encoding and renders images directly via blob URLs.

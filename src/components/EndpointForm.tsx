@@ -4,6 +4,8 @@ import { ChevronDown, ChevronRight, Play, Loader2, AlertTriangle, Globe, Code, C
 import type { EndpointConfig, FieldConfig, InputMode } from '../types/api'
 import { JsonSchemaBuilder } from './JsonSchemaBuilder'
 import { Toggle } from './Toggle'
+import { FieldControl } from './forms/FieldControl'
+import { FormField } from './forms/FormField'
 
 // Quick-start examples for the /json endpoint.
 // Ordered: broad/any-page → landing pages → content verticals → technical.
@@ -344,83 +346,6 @@ interface EndpointFormProps {
   urlCount: number
 }
 
-// Helper to get effective field value, falling back to defaultValue if unset
-function getEffectiveValue(field: FieldConfig, value: string): string {
-  // If value is set (even if empty string for text fields), use it
-  if (value !== undefined && value !== '') return value
-
-  // For boolean fields, if no value is set, use the defaultValue
-  if (field.type === 'boolean' && field.defaultValue !== undefined) {
-    return field.defaultValue ? 'true' : 'false'
-  }
-
-  return value || ''
-}
-
-function FieldInput({
-  field,
-  value,
-  onChange,
-  error,
-}: {
-  field: FieldConfig
-  value: string
-  onChange: (value: string) => void
-  error: boolean
-}) {
-  const effectiveValue = getEffectiveValue(field, value)
-  const border = error
-    ? 'border-red-500/60 focus:border-red-400'
-    : 'border-surface-300 focus:border-accent-500'
-
-  switch (field.type) {
-    case 'textarea':
-    case 'json':
-      return (
-        <textarea
-          value={effectiveValue}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          rows={field.type === 'json' ? 4 : 3}
-          className={`w-full px-3 py-2 bg-surface-200 border ${border} rounded-lg text-sm text-surface-900 placeholder:text-surface-500 focus:outline-none resize-y font-mono`}
-        />
-      )
-    case 'select':
-      return (
-        <select
-          value={effectiveValue}
-          onChange={(e) => onChange(e.target.value)}
-          className={`w-full px-3 py-2 bg-surface-200 border ${border} rounded-lg text-sm text-surface-900 focus:outline-none`}
-        >
-          <option value="">-- select --</option>
-          {field.options?.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      )
-    case 'boolean':
-      return (
-        <Toggle
-          checked={effectiveValue === 'true'}
-          onChange={(checked) => onChange(checked ? 'true' : 'false')}
-          label={effectiveValue === 'true' ? 'Yes' : 'No'}
-        />
-      )
-    default:
-      return (
-        <input
-          type={field.type === 'number' ? 'number' : 'text'}
-          value={effectiveValue}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          className={`w-full px-3 py-2 bg-surface-200 border ${border} rounded-lg text-sm text-surface-900 placeholder:text-surface-500 focus:outline-none`}
-        />
-      )
-  }
-}
-
 function getMissingRequired(
   endpoint: EndpointConfig,
   values: Record<string, string>,
@@ -748,21 +673,19 @@ export function EndpointForm({
           />
         ) : (
           <div key={field.name} className="pb-4 border-b border-surface-200 last:border-b-0 last:pb-0">
-            <label className="block text-xs font-medium text-surface-600 mb-1.5">
-              {field.label}
-              {field.required && <span className="text-accent-500 ml-1">*</span>}
-            </label>
-            <FieldInput
-              field={field}
-              value={values[field.name] || ''}
-              onChange={(v) => onChange(field.name, v)}
-              error={showError(field)}
-            />
-            {showError(field) ? (
-              <p className="text-xs text-red-400 mt-1.5">{field.label} is required</p>
-            ) : field.hint ? (
-              <p className="text-xs text-surface-500 mt-1.5 leading-relaxed">{field.hint}</p>
-            ) : null}
+            <FormField
+              label={field.label}
+              required={field.required}
+              error={showError(field) ? `${field.label} is required` : undefined}
+              hint={field.hint}
+            >
+              <FieldControl
+                field={field}
+                value={values[field.name] || ''}
+                onChange={(v) => onChange(field.name, v)}
+                error={showError(field)}
+              />
+            </FormField>
           </div>
         ),
       )}
@@ -785,21 +708,19 @@ export function EndpointForm({
             <div className="px-3 pt-2 pb-3 space-y-4">
               {fields.map((field, idx) => (
                 <div key={field.name} className={idx < fields.length - 1 ? 'pb-4 border-b border-surface-200' : ''}>
-                  <label className="block text-xs font-medium text-surface-600 mb-1.5">
-                    {field.label}
-                    {field.required && <span className="text-accent-500 ml-1">*</span>}
-                  </label>
-                  <FieldInput
-                    field={field}
-                    value={values[field.name] || ''}
-                    onChange={(v) => onChange(field.name, v)}
-                    error={showError(field)}
-                  />
-                  {showError(field) ? (
-                    <p className="text-xs text-red-400 mt-1.5">{field.label} is required</p>
-                  ) : field.hint ? (
-                    <p className="text-xs text-surface-500 mt-1.5 leading-relaxed">{field.hint}</p>
-                  ) : null}
+                  <FormField
+                    label={field.label}
+                    required={field.required}
+                    error={showError(field) ? `${field.label} is required` : undefined}
+                    hint={field.hint}
+                  >
+                    <FieldControl
+                      field={field}
+                      value={values[field.name] || ''}
+                      onChange={(v) => onChange(field.name, v)}
+                      error={showError(field)}
+                    />
+                  </FormField>
                 </div>
               ))}
             </div>

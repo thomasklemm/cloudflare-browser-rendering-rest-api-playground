@@ -614,4 +614,14 @@ export const endpoints: EndpointConfig[] = [
       ...sharedFields,
     ],
   },
+  {
+    id: 'crawl',
+    label: 'Crawl',
+    shortDesc: 'Async site crawl',
+    method: 'POST',
+    path: '/crawl',
+    description: 'Launch an async crawl job, then inspect records, filter statuses, paginate results, and export the crawl output.',
+    responseType: 'crawl',
+    fields: [],
+  },
 ]
