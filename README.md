@@ -72,7 +72,7 @@ Each API request spins up a new browser instance. Rate limits use a fixed per-se
 | --- | --- | --- |
 | REST API requests | **6**/min (1 every 10s) | **600**/min (10/sec) |
 | Concurrent browsers | 3 | 30 |
-| Browser time | 10 min/day | Unlimited |
+| Browser time | 10 min/day | 2 hrs/mo included, then $0.10/hr |
 
 Select your plan in settings — the playground adjusts request spacing automatically.
 
