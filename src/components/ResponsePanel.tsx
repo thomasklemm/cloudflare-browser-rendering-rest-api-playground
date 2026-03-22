@@ -232,6 +232,10 @@ function ResponseViewer({ response, responseType }: { response: ApiResponse; res
       return <MarkdownViewer data={data} />
     case 'snapshot':
       return <SnapshotViewer screenshot={null} html={null} />
+    case 'crawl':
+      return (
+        <pre className="p-4 text-sm text-surface-700 whitespace-pre-wrap">{data}</pre>
+      )
     default:
       return (
         <pre className="p-4 text-sm text-surface-700 whitespace-pre-wrap">{data}</pre>
@@ -300,6 +304,7 @@ const RESPONSE_TYPE_EXT: Record<ResponseType, string> = {
   json: 'json',
   markdown: 'md',
   snapshot: 'json',
+  crawl: 'json',
 }
 
 const RESPONSE_TYPE_LABEL: Record<ResponseType, string> = {
@@ -309,6 +314,7 @@ const RESPONSE_TYPE_LABEL: Record<ResponseType, string> = {
   json: 'data',
   markdown: 'markdown',
   snapshot: 'snapshot',
+  crawl: 'crawl',
 }
 
 function buildDownloadName(url: string, responseType: ResponseType): string {

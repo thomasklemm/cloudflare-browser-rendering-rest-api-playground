@@ -1,38 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import type { EndpointConfig, Settings, ApiResponse, BatchResponseEntry, RequestState, WorkersPlan } from '../types/api'
+import type { EndpointConfig, Settings, ApiResponse, BatchResponseEntry, RequestState } from '../types/api'
 import { buildFetchOptions } from '../lib/buildRequest'
-
-// Cloudflare Browser Rendering REST API limits (as of Mar 2026):
-// Free Plan: 6 req/min (1 every 10s), 3 concurrent browsers
-// Paid Plan: 600 req/min (10/sec), 30 concurrent browsers
-//
-// IMPORTANT: Rate limits use fixed per-second fill rate, NOT burst allowance.
-// Must spread requests evenly.
-
-const MAX_RETRIES = 3
-
-// Plan-specific rate limit configurations
-// Official limits: https://developers.cloudflare.com/browser-rendering/limits/
-//
-// REST API rate limits (separate from Bindings "new browser instances" limits):
-// Free: 6 req/min (1 every 10s)
-// Paid: 600 req/min (10/sec)
-//
-// Rate limits use FIXED per-second fill rate - must spread evenly, no burst
-const PLAN_LIMITS = {
-  free: {
-    maxConcurrent: 1,           // Free: sequential processing only
-    maxRequestsPerMin: 6,       // 6 req/min
-    minRequestSpacingMs: 10000, // 10 seconds (1 every 10s)
-    initialRetryMs: 15000,      // 15s initial retry delay
-  },
-  paid: {
-    maxConcurrent: 10,          // Reasonable batch size for the playground
-    maxRequestsPerMin: 600,     // 600 req/min (10/sec)
-    minRequestSpacingMs: 100,   // 100ms (10/sec fill rate)
-    initialRetryMs: 5000,       // 5s initial retry delay
-  },
-} as const
+import { MAX_RETRIES, PLAN_LIMITS, waitForRateLimit } from '../lib/rateLimits'
 
 function wait(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -42,55 +11,6 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
       reject(new DOMException('Aborted', 'AbortError'))
     }, { once: true })
   })
-}
-
-// Global rate limiter: tracks recent request timestamps across all endpoint tabs
-const globalRequestTimestamps: number[] = []
-const RATE_LIMIT_WINDOW_MS = 60000  // 1 minute window
-
-async function waitForRateLimit(
-  plan: WorkersPlan,
-  signal?: AbortSignal,
-): Promise<void> {
-  const limits = PLAN_LIMITS[plan]
-  const now = Date.now()
-
-  // Clean up timestamps older than 1 minute
-  while (globalRequestTimestamps.length > 0 && globalRequestTimestamps[0] < now - RATE_LIMIT_WINDOW_MS) {
-    globalRequestTimestamps.shift()
-  }
-
-  // Enforce minimum spacing between requests
-  if (globalRequestTimestamps.length > 0) {
-    const lastRequestTime = globalRequestTimestamps[globalRequestTimestamps.length - 1]
-    const timeSinceLastRequest = now - lastRequestTime
-    if (timeSinceLastRequest < limits.minRequestSpacingMs) {
-      const spacingWait = limits.minRequestSpacingMs - timeSinceLastRequest
-      await wait(spacingWait, signal)
-    }
-  }
-
-  // If we've made max requests in the last minute, wait until the oldest one expires
-  const nowAfterSpacing = Date.now()
-  while (globalRequestTimestamps.length > 0 && globalRequestTimestamps[0] < nowAfterSpacing - RATE_LIMIT_WINDOW_MS) {
-    globalRequestTimestamps.shift()
-  }
-
-  if (globalRequestTimestamps.length >= limits.maxRequestsPerMin) {
-    const oldestTimestamp = globalRequestTimestamps[0]
-    const waitTime = (oldestTimestamp + RATE_LIMIT_WINDOW_MS) - nowAfterSpacing
-    if (waitTime > 0) {
-      await wait(waitTime, signal)
-    }
-    // Clean up again after waiting
-    const nowAfterWait = Date.now()
-    while (globalRequestTimestamps.length > 0 && globalRequestTimestamps[0] < nowAfterWait - RATE_LIMIT_WINDOW_MS) {
-      globalRequestTimestamps.shift()
-    }
-  }
-
-  // Record this request
-  globalRequestTimestamps.push(Date.now())
 }
 
 export function useBatchApiRequest() {

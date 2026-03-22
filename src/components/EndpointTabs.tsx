@@ -17,6 +17,7 @@ const docsUrlMap: Record<string, string> = {
   snapshot: '/browser-rendering/rest-api/snapshot/',
   scrape: '/browser-rendering/rest-api/scrape-endpoint/',
   links: '/browser-rendering/rest-api/links-endpoint/',
+  crawl: '/browser-rendering/rest-api/crawl-endpoint/',
 }
 
 export function EndpointTabs({ endpoints, activeId, onSelect }: EndpointTabsProps) {

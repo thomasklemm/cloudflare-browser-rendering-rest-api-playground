@@ -9,7 +9,7 @@ import type { EndpointConfig, Settings } from '../types/api'
 // Covers: OneTrust, Cookiebot, Quantcast, Didomi, TrustArc, Usercentrics, Klaro,
 // Osano, Termly, CookieYes, Complianz, Iubenda, Axeptio, Sourcepoint, CookieFirst,
 // Borlabs, CIVIC, consentmanager.net, and generic cookie/consent/gdpr patterns.
-const CMP_BLOCK_PATTERNS: string[] = [
+export const CMP_BLOCK_PATTERNS: string[] = [
   // OneTrust
   'cdn\\.cookielaw\\.org',
   'optanon\\.blob\\.core',
@@ -68,7 +68,7 @@ const CMP_BLOCK_PATTERNS: string[] = [
 
 // Fallback cleanup script for banners that still appear (inline/custom implementations).
 // Approach based on reject_all_cookies, DuckDuckGo autoconsent, and screenshotone.com.
-const DISMISS_COOKIES_SCRIPT = `
+export const DISMISS_COOKIES_SCRIPT = `
 (function() {
   function isVisible(el) {
     if (!el || el.hidden || el.style.display === 'none') return false;

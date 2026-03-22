@@ -89,7 +89,7 @@ async function handleApiProxy(request: Request, url: URL): Promise<Response> {
   // Return response with CORS headers
   const proxyResponse = new Response(response.body, response)
   proxyResponse.headers.set('Access-Control-Allow-Origin', '*')
-  proxyResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  proxyResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
   proxyResponse.headers.set('Access-Control-Allow-Headers', '*')
 
   return proxyResponse
